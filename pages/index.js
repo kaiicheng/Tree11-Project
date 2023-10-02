@@ -4,7 +4,6 @@ import Button from "../components/buttons/buttons";
 import StackedBarChart from "../components/charts/StackedBarChart";
 import { sr_by_source } from "../data/dataCharts.js";
 // import LineChart from "../components/charts/LineChart";
-
 import Map from "../components/map/map";
 import { sr_to_insp_or_wo, static_data } from "../data/dataCharts.js";
 
