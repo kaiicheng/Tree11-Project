@@ -1,0 +1,212 @@
+// Add styles for the map there
+
+.map {
+  display: flex;
+  flex: 1;
+  padding: 2rem 0;
+  border-top: 1px solid #eaeaea;
+  justify-content: center;
+  align-items: center;
+  // hover animation title show interaction
+}
+
+.map a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .module {
+    border-color: #222;
+  }
+}
+
+.mapWrapper {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  &:hover .vizTitle h3 {
+    opacity: 1;
+  }
+}
+
+.mapContainer {
+  position: absolute !important;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #242424;
+
+  .mapboxgl-control-container {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+  }
+}
+
+.mapSidebar {
+  background-color: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  padding: 6px 12px;
+  font-family: monospace;
+  z-index: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 12px;
+  border-radius: 4px;
+}
+
+// Filters
+
+.filterGroup {
+  font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  border-radius: 3px;
+  width: 120px;
+  color: #fff;
+
+  background-color: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font-family: monospace;
+  z-index: 1;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 12px;
+  border-radius: 4px;
+}
+
+.filterGroup input[type="checkbox"]:first-child + label {
+  border-radius: 3px 3px 0 0;
+}
+
+.filterGroup label:last-child {
+  border-radius: 0 0 3px 3px;
+  border: none;
+}
+
+.filterGroup input[type="checkbox"] {
+  display: none;
+}
+
+.filterGroup input[type="checkbox"] + label {
+  background-color: rgba(255, 255, 255, 0);
+  display: block;
+  cursor: pointer;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  &:last-of-type {
+    border-bottom: 0;
+  }
+}
+
+.filterGroup input[type="checkbox"] + label {
+  text-transform: capitalize;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.filterGroup input[type="checkbox"] + label:hover,
+.filterGroup input[type="checkbox"]:checked + label {
+  background-color: rgba(255, 255, 255, 0);
+}
+
+.filterGroup input[type="checkbox"] + label:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.filterGroup input[type="checkbox"]:checked + label:before {
+  content: "✔";
+  margin-right: 5px;
+}
+
+.mapPopup {
+  // background: rgba(255, 255, 255, 0.1);
+
+  div {
+    backdrop-filter: blur(16px);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+
+    // .mapboxgl-popup-tip
+    & ul:nth-of-type(1) {
+      
+      border-top-color: rgba(255, 255, 255, 0.1);
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+   
+    }
+ 
+    // .mapboxgl-popup-content
+    &:nth-of-type(2) {
+      border: 1 solid rgba(255, 255, 255, 0.1);
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      li {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        span:first-of-type {
+          opacity: 0.6;
+          background-color: white;
+          border-radius: 12px;
+          padding: 2px 4px;
+          color: black;
+        }
+      }
+    }
+  }
+}
+
+.mapLoader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(24px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  p {
+    font-size: 0.8rem;
+    color: rgba(#fff, 0.6);
+    padding: 12px;
+
+    text-transform: uppercase;
+    line-height: 1.8rem;
+  }
+  p span {
+    display: inline-block;
+    color: rgba(#fff, 1);    font-size: 1.2rem;
+    animation: loaderIcon 2s infinite both;
+    margin-left: 6px;
+  }
+}
+
+@keyframes loaderIcon {
+  0% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  100% {
+    transform: rotate(-10deg);
+  }
+}
