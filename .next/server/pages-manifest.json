@@ -2,6 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/get-involved": "pages/get-involved.js",
-  "/deepdive": "pages/deepdive.js"
+  "/metrics": "pages/metrics.js",
+  "/": "pages/index.js",
+  "/deepdive": "pages/deepdive.js",
+  "/intro": "pages/intro.js"
 }
