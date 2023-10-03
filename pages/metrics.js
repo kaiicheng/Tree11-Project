@@ -5,7 +5,7 @@ import Button from "../components/buttons/buttons"
 import styles from "./styles/home.module.scss";
 import SRMetric from "../components/charts/SRMetrics"
 import WOMetric from "../components/charts/WOMetrics";
-import InsMetric from "../components/charts/INSMetrics";
+import InsMetric from "../components/charts/InsMetrics";
 
 function VizTitle({ children, color }) {
   return (
