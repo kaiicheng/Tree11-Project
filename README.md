@@ -1,6 +1,6 @@
 # 311 Cornell Dashboard [SPEC]
 
-<img src="Tree11 Dashboard.png" width="50%">
+<img src="Tree11 Dashboard.png" width="120%">
 
 https://tree11-project.vercel.app/
 
