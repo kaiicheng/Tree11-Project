@@ -23,96 +23,95 @@ ChartJS.register(
     Legend,
     LineElement
 );
-
-function getSimilarColor(inputColor,i,dataLen) {
-  const factor = dataLen/0.5
-  inputColor = inputColor.slice(1);
-
-  // Convert the hex color to RGB values
-  const r = parseInt(inputColor.slice(0, 2), 16);
-  const g = parseInt(inputColor.slice(2, 4), 16);
-  const b = parseInt(inputColor.slice(4, 6), 16);
-
-  const newR = Math.abs((r + factor * 2 * i) % 256);
-  const newG = Math.abs((g + factor * 0.4 * i) % 256);
-  const newB = Math.abs((b + factor * 0.25 * i) % 256);
-
-  // Convert the new RGB values back to hex
-  const newColor = `#${(1 << 24 | newR << 16 | newG << 8 | newB).toString(16).slice(1)}`;
-  return newColor;
-}
-
-export default function LinePlot(dataPath) {
-  // const [rawData, setRawData] = useState([])
-  const [data,setData] = useState([])
-  const path = dataPath.data
-  const title = dataPath.title
-  const options = {
+const options = {
     responsive: true,
     plugins: {
       legend: {
         position: 'top',
       },
-      tooltip: {
-        enabled: true,
-        mode: "nearest",
-        axis: 'xy',
-        intersect: false,
-      },
       title: {
         display: true,
-        text: title,
+        text: 'Requests yielding Inspections and Work Orders',
       },
-    },
-    // scales : {
-    //   x: {
-    //     ticks: {
-    //       callback: (value,i) => {
-    //         return value
-    //       }
-    //     }
-    //   }
-    // } 
-  };
-
-  async function getData(path) {
-      let rawData = Papa.parse(await fetchCsv(path));
-      rawData = rawData.data
-      //  Split label and data
-      let labels = []
-      let cols = []
-      let groupData = []
-      
-      cols = rawData[0].slice(1)
-      for (let i = 1; i < rawData[0].length; i++) {
-          const tempGroup = []
-          for (let j = 1; j < rawData.length; j++) {
-              if (i == 1) {
-                  labels.push(rawData[j][0])
-              }
-              tempGroup.push(rawData[j][i])
-          }
-          groupData.push(tempGroup)
+      tooltip: {
+        enabled: false
       }
-      // console.log("cols", cols)
-      // console.log("groupData", groupData)
-      // console.log("labels", labels)
+    },
+    scales : {
+      x: {
+        ticks: {
+          callback: (value,i) => {
+            if (i % 10 == 0) {
+                return value
+            }
+          }
+        }
+      }
+    }
+};
 
-      const data = {
-          labels,
-          datasets: cols.map((val,i) => {
-              let color = getSimilarColor("#A88A53", i, cols.length)
-              return {
-                  label: cols[i],
-                  data: groupData[i],
-                  borderColor: color,
-                  backgroundColor: color,
-                  yAxisID: "y",
-                  pointRadius: 2.5,
-              }
-          })
-      };      
-      setData(data)   
+function getSimilarColor(inputColor) {
+    inputColor = inputColor.slice(1);
+    const random = Math.floor(Math.random() * 200 - 100);
+
+    // Convert the hex color to RGB values
+    const r = parseInt(inputColor.slice(0, 2), 16);
+    const g = parseInt(inputColor.slice(2, 4), 16);
+    const b = parseInt(inputColor.slice(4, 6), 16);
+    
+    const newR = Math.min(255, r + random);
+    const newG = Math.min(255, g + random);
+    const newB = Math.min(255, b + random);
+  
+    // Convert the new RGB values back to hex
+    const newColor = `#${(1 << 24 | newR << 16 | newG << 8 | newB).toString(16).slice(1)}`;
+    return newColor;
+  }
+
+export default function LinePlot(dataPath) {
+    // const [rawData, setRawData] = useState([])
+    const [data,setData] = useState([])
+    const path = dataPath.data
+
+    async function getData(path) {
+        let rawData = Papa.parse(await fetchCsv(path));
+        rawData = rawData.data
+        console.log("called")
+        //  Split label and data
+        let labels = []
+        let cols = []
+        let groupData = []
+        
+        cols = rawData[0].slice(1)
+        for (let i = 1; i < rawData[0].length; i++) {
+            const tempGroup = []
+            for (let j = 1; j < rawData.length; j++) {
+                if (i == 1) {
+                    labels.push(rawData[j][0])
+                }
+                tempGroup.push(rawData[j][i])
+            }
+            groupData.push(tempGroup)
+        }
+        console.log("cols", cols)
+        console.log("groupData", groupData)
+        console.log("labels", labels)
+
+        const data = {
+            labels,
+            datasets: cols.map((val,i) => {
+                let color = getSimilarColor("#A88A53")
+                return {
+                    label: cols[i],
+                    data: groupData[i],
+                    borderColor: color,
+                    backgroundColor: color,
+                    yAxisID: "y",
+                    pointRadius: 0,
+                }
+            })
+        };      
+        setData(data)   
     }
     
     async function fetchCsv(path) {
@@ -124,12 +123,11 @@ export default function LinePlot(dataPath) {
         // console.log('csv', csv);
         return csv;
     }    
-
     useEffect(() => {
         getData(path)
     }, [])
     
-    // console.log(data)
+    console.log(data)
     // return <Bar options={options} data={data} /> 
     
     return (
