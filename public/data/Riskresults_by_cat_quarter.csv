@@ -1,0 +1,44 @@
+Quarter,SRCategory,A,B,C,D,E
+2022Q1,Hazard,28,153,693,2724,1315
+2022Q1,Illegal Tree Damage,5,22,60,408,394
+2022Q1,Pest/Disease,0,0,0,1,0
+2022Q1,Plant Tree,2,0,0,0,2838
+2022Q1,Planting Space,0,0,0,0,1
+2022Q1,Prune,1,10,143,770,1184
+2022Q1,Remove Debris,1,1,6,25,53
+2022Q1,Remove Stump,0,0,1,12,139
+2022Q1,Remove Tree,4,41,308,1275,655
+2022Q1,Rescue/Preservation,0,9,12,34,29
+2022Q1,Root/Sewer/Sidewalk,1,0,4,437,1417
+2022Q2,Hazard,52,245,982,5061,1823
+2022Q2,Illegal Tree Damage,1,22,84,670,869
+2022Q2,Pest/Disease,0,0,0,3,2
+2022Q2,Plant Tree,0,1,2,13,6799
+2022Q2,Planting Space,0,0,0,0,2
+2022Q2,Prune,2,39,448,2241,4731
+2022Q2,Remove Debris,0,3,9,23,59
+2022Q2,Remove Stump,0,0,0,9,219
+2022Q2,Remove Tree,5,82,611,3360,1287
+2022Q2,Rescue/Preservation,0,5,25,64,45
+2022Q2,Root/Sewer/Sidewalk,0,1,1,449,2111
+2022Q3,Hazard,90,340,1365,7030,2191
+2022Q3,Illegal Tree Damage,3,24,92,684,767
+2022Q3,Pest/Disease,0,0,0,2,6
+2022Q3,Plant Tree,0,0,0,9,4815
+2022Q3,Prune,3,74,447,2927,5488
+2022Q3,Remove Debris,2,7,13,70,102
+2022Q3,Remove Stump,0,1,1,11,174
+2022Q3,Remove Tree,14,81,899,4305,1362
+2022Q3,Rescue/Preservation,0,6,19,87,47
+2022Q3,Root/Sewer/Sidewalk,0,1,4,238,2410
+2022Q4,Hazard,42,227,953,4092,1657
+2022Q4,Illegal Tree Damage,0,17,67,418,502
+2022Q4,Pest/Disease,0,0,0,2,0
+2022Q4,Plant Tree,0,0,0,4,5842
+2022Q4,Planting Space,0,0,0,0,2
+2022Q4,Prune,0,30,245,1258,2299
+2022Q4,Remove Debris,1,2,16,39,91
+2022Q4,Remove Stump,0,1,0,5,117
+2022Q4,Remove Tree,12,60,502,1766,567
+2022Q4,Rescue/Preservation,1,0,12,43,27
+2022Q4,Root/Sewer/Sidewalk,0,0,0,74,2201
