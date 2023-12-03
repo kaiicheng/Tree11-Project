@@ -20,46 +20,59 @@ ChartJS.register(
     Legend
 );
 
-function getSimilarColor(inputColor,i,dataLen) {
-    const factor = dataLen/0.2
+function getSimilarColor(inputColor,i) {
     inputColor = inputColor.slice(1);
-  
     // Convert the hex color to RGB values
     const r = parseInt(inputColor.slice(0, 2), 16);
     const g = parseInt(inputColor.slice(2, 4), 16);
     const b = parseInt(inputColor.slice(4, 6), 16);
-  
-    const newR = Math.abs((r + factor * 0.7 * i) % 256);
-    const newG = Math.abs((g + factor * 0.5 * i) % 256);
-    const newB = Math.abs((b + factor * 2 * i) % 256);
+    
+    const newR = Math.min(255, r + 20*i);
+    const newG = Math.min(255, g + 10*i);
+    const newB = Math.min(255, b + 10*i);
   
     // Convert the new RGB values back to hex
     const newColor = `#${(1 << 24 | newR << 16 | newG << 8 | newB).toString(16).slice(1)}`;
     return newColor;
   }
 
-export default function BarPlot(dataPath) {
-    // const [rawData, setRawData] = useState([])
+export default function StackedBarChart(dataOps) {
+    // console.log("Stack bar called")
     const [data,setData] = useState([])
-    const path = dataPath.data
-    const title = dataPath.title
+    const path = dataOps.data
+    const title = dataOps.title
     const options = {
-        responsive: true,
         plugins: {
-          legend: {
-            position: 'top',
-          },
-          title: {
-            display: true,
-            text: title,
-            fullSize: true,
-          },
+            title: {
+                display: false,
+            },
+            legend: {
+                display: false,
+            },
+            title: {
+                display: true,
+                text: title,
+            },
+        },
+        responsive: true,
+        scales: {
+            x: {
+                stacked: true,
+            },
+            y: {
+                stacked: true,
+            },
         },
     };
-    
+
+    if (dataOps.custom) {
+        console.log(dataOps.customData)
+        return (<Bar options={options} data={dataOps.customData}/>)
+    }
     async function getData(path) {
         let rawData = Papa.parse(await fetchCsv(path));
         rawData = rawData.data
+        
         //  Split label and data
         let labels = []
         let cols = []
@@ -83,12 +96,14 @@ export default function BarPlot(dataPath) {
         const data = {
             labels,
             datasets: cols.map((val,i) => {
+                let color = getSimilarColor("#A88A53", i)
                 return {
                     label: cols[i],
                     data: groupData[i],
-                    // borderColor: "FFE500",
-                    backgroundColor: getSimilarColor("#B79D6B",i,cols.length),
-                    yAxisID: "y",
+                    borderColor: color,
+                    backgroundColor: color,
+                    // yAxisID: "y",
+                    // pointRadius: 0,
                 }
             })
         };      
@@ -101,13 +116,18 @@ export default function BarPlot(dataPath) {
         const result = await reader.read();
         const decoder = new TextDecoder('utf-8');
         const csv = await decoder.decode(result.value);
+        // console.log('csv', csv);
         return csv;
     }    
+    
     useEffect(() => {
         getData(path)
     }, [])
     
+    // console.log(data)
+
     return (
         data.length == 0 ? <div></div> : <Bar options={options} data={data}/> 
     )
+    // return <Bar options={options} data={data} />;
 }
