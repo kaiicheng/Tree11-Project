@@ -2,7 +2,7 @@
 
 <img src="Tree11 Dashboard.png" width="120%">
 
-https://www.tree11.org/
+https://www.tree11.org
 
 <!-- https://tree11-project.vercel.app/ -->
 
