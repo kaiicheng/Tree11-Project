@@ -1,4 +1,4 @@
-# 311 Cornell Dashboard [SPEC]
+# 311 Cornell Dashboard
 
 <img src="Tree11 Dashboard.png" width="120%">
 
