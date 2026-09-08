@@ -1,11 +1,13 @@
 import Header from "../components/header/header";
 import Footer from "../components/footer/footer";
-import Button from "../components/buttons/buttons";
+import PageHeader from "../components/page-header/page-header";
 import StackedBarChart from "../components/charts/StackedBarChart";
-import { sr_by_source } from "../data/dataCharts.js";
 // import LineChart from "../components/charts/LineChart";
 import Map from "../components/map/map";
-import { sr_to_insp_or_wo, static_data } from "../data/dataCharts.js";
+import fs from "fs";
+import path from "path";
+import { useEffect, useState } from "react";
+import { refreshAge, formatUtc } from "../lib/data-status";
 
 import styles from "./styles/home.module.scss";
 
@@ -16,39 +18,37 @@ function VizTitle({ children, color }) {
     </div>
   );
 }
-export default function Home() {
+function RefreshDashboard({ summary, manifest, trend }) {
+  const refresh = manifest.refresh || summary.refresh || {};
+  const refreshed = refresh.ended_at;
+  const [state, setState] = useState("Checking refresh age");
+  useEffect(() => {
+    const update = () => setState(refreshAge(refreshed));
+    const initial = setTimeout(update, 0);
+    const timer = setInterval(update, 60 * 1000);
+    const onVisible = () => { if (!document.hidden) update(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearTimeout(initial); clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
+  }, [refreshed]);
+  const mode = refresh.data_mode || "unknown";
+  const change = summary.change_counts || {};
+  const rows = manifest.source_rows || {};
+  return <section className={styles.refreshDashboard} aria-label="Dataset refresh status">
+    <div><span className={styles.refreshLabel}>Update process</span><strong>{refresh.status === "success" ? "Succeeded" : refresh.status || "Unknown"}</strong><small>Last process completion: {formatUtc(refreshed)}</small><small aria-live="polite">{state}</small></div>
+    <div><span className={styles.refreshLabel}>Data coverage (UTC)</span><strong>{formatUtc(manifest.data_through || summary.data_through)}</strong><small>Latest source event date; a successful refresh does not guarantee current or complete coverage.</small></div>
+    <div><span className={styles.refreshLabel}>Dataset type</span><strong className={mode !== "live" ? styles.stale : ""}>{mode === "fixture" ? "Test data (fixture)" : mode === "live" ? "Source data" : "Unverified provenance"}</strong><small>{mode === "fixture" ? "Synthetic sample for testing; does not represent NYC totals." : "Coverage and record counts describe this published dataset."}</small></div>
+    <div><span className={styles.refreshLabel}>Source records</span><strong>{Object.values(rows).reduce((a, b) => a + b, 0).toLocaleString()}</strong><small>{Object.entries(rows).map(([name, count]) => `${name.replaceAll("_", " ")}: ${count.toLocaleString()}`).join(" · ")}</small></div>
+    <div><span className={styles.refreshLabel}>Latest changes</span><strong>+{change.added || 0} / ~{change.changed || 0} / −{change.removed || 0}</strong><small>Added / changed / removed</small></div>
+    <div><span className={styles.refreshLabel}>Recent refreshes</span><strong>{trend.labels?.length || 0} retained</strong><small>{trend.labels?.slice(-3).join(" · ") || "No history available"}</small></div>
+  </section>;
+}
+export default function Home({ summary, srBySource, manifest, trend, lifecycle }) {
   return (
     <div className={styles.homeContainer}>
       <Header pageTitle="Home" />
-      <link
-        href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.0/mapbox-gl.css"
-        rel="stylesheet"
-      />
       <main className={styles.main}>
-        <section className={styles.rowInfo}>
-          <div className={styles.columnTitle}>
-            <h1 className={styles.title}>
-              NYC <span>Tree11</span>
-            </h1>
-          </div>
-          <div className={styles.columnInfo}>
-            <div className={styles.navigation}>
-              <nav>
-                <Button href={"/"}>Home</Button>
-                <Button href={"/intro"}>About</Button>
-                <Button href={"/metrics"}>Metrics</Button>
-                <Button href={"/deepdive"}>Deepdive</Button>
-              </nav>
-              <Button href={"/get-involved"}>Get Involved</Button>
-            </div>
-            <p className={styles.paragraph}>
-              Collaboration between cornell tech and NYCDPR
-              focused on visualization, communication, and contextualization of public data to
-              bring new yorkers insight into how forestry service requests
-              are addressed by the new york city department of parks and recreaction.
-            </p>
-          </div>
-        </section>
+        <PageHeader showDescription />
+        <RefreshDashboard summary={summary} manifest={manifest} trend={trend} />
         <section className={styles.dataGrid}>
           <div className={styles.dataVizMap}>
             <Map />
@@ -58,28 +58,29 @@ export default function Home() {
               <VizTitle color="#fff">
                 % of Service Requests Yielding an Inspection or a Work Order
               </VizTitle>
-              <StackedBarChart data={sr_to_insp_or_wo} />
+              <p className={styles.paragraph_long}>Source-event lifecycle metrics: {lifecycle.request_count.toLocaleString()} requests; {lifecycle.requests_with_inspection.toLocaleString()} linked to an inspection; {lifecycle.requests_with_work_order.toLocaleString()} linked to a work order.</p>
+              <p className={styles.paragraph_long}>Median request to first inspection: {lifecycle.median_request_to_inspection_hours == null ? "not yet available" : `${lifecycle.median_request_to_inspection_hours.toFixed(1)} hours`}. Timing uses source event fields where available; retained observation history begins when Tree11 snapshots are collected.</p>
             </div>
             <div className={styles.dataVizLine}>
               <div className={styles.lineNumbers}>
                 <div className={styles.numberWrapper}>
-                  <span className={styles.numbersBig}>{static_data.last_month_requests}</span>
+                  <span className={styles.numbersBig}>{summary.last_month_requests.toLocaleString()}</span>
                   <p>
                     <span className={styles.numbersTag}>
-                      requests last month
+                      requests in {summary.last_complete_month || "the last complete month"}
                     </span>
                   </p>
                 </div>
                 <div className={styles.numberWrapper}>
-                  <span className={styles.numbersBig}>{static_data.uninspected}</span>
+                  <span className={styles.numbersBig}>{summary.uninspected_requests.toLocaleString()}</span>
                   <p>
                     <span className={styles.numbersTag}>uninspected</span>
                   </p>
                 </div>
                 <div className={styles.numberWrapper}>
-                  <span className={styles.numbersBig}>{static_data.total_2022}</span>
+                  <span className={styles.numbersBig}>{summary.inspections_in_period.toLocaleString()}</span>
                   <p>
-                    <span className={styles.numbersTag}>INSPECTIONS in 2022</span>
+                    <span className={styles.numbersTag}>inspections in the analysis period</span>
                   </p>
                 </div>
               </div>
@@ -100,8 +101,10 @@ export default function Home() {
                   </p>
                   <p></p>
                   <div className={styles.dataVizTop}>
-                    <VizTitle color="#fff">Monthly Service Requests by Source in 2022</VizTitle>
-                    <StackedBarChart stacked={true} data={sr_by_source} />
+                    <VizTitle color="#fff">Monthly Service Requests by Source</VizTitle>
+                    <StackedBarChart stacked={true} data={srBySource} />
+                    <p className={styles.paragraph_long}>Data through {summary.data_through ? formatUtc(summary.data_through) : "the latest source record"}. Last refresh: {formatUtc(summary.refresh?.ended_at)}.</p>
+                    <p className={styles.paragraph_long}><a href="/data/map/points.geojson" download>Download current processed map data (GeoJSON)</a></p>
                   </div>
                 </div></section>
                 
@@ -111,4 +114,16 @@ export default function Home() {
       <Footer />
     </div>
   );
+}
+
+export async function getStaticProps() {
+  const dataDir = path.join(process.cwd(), "public", "data");
+  const summary = JSON.parse(fs.readFileSync(path.join(dataDir, "summary.json"), "utf8"));
+  return { props: {
+    summary,
+    srBySource: JSON.parse(fs.readFileSync(path.join(dataDir, "charts", "service_requests_by_source.json"), "utf8")),
+    manifest: JSON.parse(fs.readFileSync(path.join(dataDir, "manifest.json"), "utf8")),
+    trend: JSON.parse(fs.readFileSync(path.join(dataDir, "history", "trend.json"), "utf8")),
+    lifecycle: JSON.parse(fs.readFileSync(path.join(dataDir, "history", "lifecycle_summary.json"), "utf8")),
+  }};
 }

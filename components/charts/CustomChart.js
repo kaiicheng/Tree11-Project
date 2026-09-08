@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react";
 import Papa from 'papaparse';
-import BarPlot from "./MetricBarChart";
-import LinePlot from './MetricLineChart';
-import StackedBarChart from './MetricStackedBarChart';
 import styles from './chart.module.scss'
 
 import {
@@ -26,8 +23,6 @@ ChartJS.register(
 );
 function getSimilarColor(inputColor,i) {
     inputColor = inputColor.slice(1);
-    const random = Math.floor(Math.random() * 200 - 100);
-  
     // Convert the hex color to RGB values
     const r = parseInt(inputColor.slice(0, 2), 16);
     const g = parseInt(inputColor.slice(2, 4), 16);
@@ -115,8 +110,13 @@ export default function CustomPlot(dataPath) {
         setActiveTab(group)
     }
 
-    async function getData(path) {
-        let rawData = Papa.parse(await fetchCsv(path));
+    useEffect(() => {
+      const controller = new AbortController();
+
+    async function getData() {
+        const response = await fetch(path, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Unable to load chart data (${response.status})`);
+        let rawData = Papa.parse(await response.text(), { skipEmptyLines: true });
         rawData = rawData.data
         
         const cols = rawData[0].slice(2);
@@ -166,18 +166,11 @@ export default function CustomPlot(dataPath) {
         setCustomGroup(customGroup)
     }
     
-    async function fetchCsv(path) {
-        const response = await fetch(path);
-        const reader = response.body.getReader();
-        const result = await reader.read();
-        const decoder = new TextDecoder('utf-8');
-        const csv = await decoder.decode(result.value);
-        return csv;
-    }    
-
-    useEffect(() => {
-        getData(path)
-    }, [])
+    getData().catch((error) => {
+      if (error.name !== "AbortError") setData([]);
+    });
+    return () => controller.abort();
+    }, [path])
     
     return (
         data.length == 0 ? <div></div> : 

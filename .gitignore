@@ -1,1 +1,29 @@
-node_modules
+node_modules/
+.next/
+out/
+coverage/
+
+# Local environment files (keep .env.example committed)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor, OS, and notebook-generated files
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints/
+
+# Tree11 reproducible pipeline intermediates; published public/data is intentionally tracked.
+/data/canonical/
+/pipeline/.cache/
+/.tmp/
+*.parquet
+__pycache__/
+*.py[cod]
+*.egg-info/
+/data/raw/
+/data/intermediate/
+/data/*.zip
+/pipeline/.test-output/

@@ -1,267 +1,233 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import mapboxgl from "mapbox-gl";
 import styles from "./map.module.scss";
-import mapboxgl from "!mapbox-gl"; // eslint-disable-line import/no-webpack-loader-syntax
 
-// import css from "styled-jsx/css";
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+const MAP_STYLE = process.env.NEXT_PUBLIC_MAPBOX_STYLE || "mapbox://styles/mapbox/streets-v12";
+const SOURCE_ID = "311-data";
+const BOROUGHS = ["Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island"];
+const INITIAL_VIEW = { longitude: -73.98, latitude: 40.698, zoom: 11 };
 
-mapboxgl.accessToken =
-  "pk.eyJ1IjoiZGFhbnZhbmRlcnp3YWFnIiwiYSI6ImNrdHVhOXBpMDF5YzAybm1oM3gzbTBmYWMifQ.CW1kG74nME-J1VZNULhrWw";
+mapboxgl.accessToken = MAPBOX_TOKEN || "";
+
+async function loadLocations(signal) {
+  const response = await fetch("/data/map/points.geojson", { signal });
+  if (!response.ok) {
+    throw new Error(`Unable to load map data (${response.status})`);
+  }
+
+  const data = await response.json();
+  if (!Array.isArray(data.features)) {
+    throw new Error("Map data is not a valid GeoJSON FeatureCollection");
+  }
+
+  return {
+    type: "FeatureCollection",
+    features: data.features.filter(
+      (feature) =>
+        feature?.geometry?.type === "Point" &&
+        Array.isArray(feature.geometry.coordinates) &&
+        feature.geometry.coordinates.length >= 2
+    ),
+  };
+}
+
+function createPopupContent(properties = {}) {
+  const fields = [
+    ["Request ID", "service_request_id"], ["Status", "status"], ["Source", "source"],
+    ["Created", "created_date"], ["Inspections", "inspection_count"],
+    ["Work orders", "work_order_count"], ["Maximum risk", "max_risk_rating"],
+  ];
+  const container = document.createElement("div");
+  const list = document.createElement("dl");
+
+  fields.forEach(([label, key]) => {
+    const term = document.createElement("dt");
+    const value = document.createElement("dd");
+    term.textContent = label;
+    value.textContent = properties[key] ?? "Not available";
+    list.append(term, value);
+  });
+
+  container.appendChild(list);
+  return container;
+}
 
 export default function Map() {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const [view, setView] = useState(INITIAL_VIEW);
+  const [visibleBoroughs, setVisibleBoroughs] = useState(() => new Set(BOROUGHS));
+  const boroughsRef = useRef(visibleBoroughs);
+  const [status, setStatus] = useState(MAPBOX_TOKEN
+    ? { state: "loading", count: 0, message: "" }
+    : { state: "error", count: 0, message: "Map unavailable: configure NEXT_PUBLIC_MAPBOX_TOKEN." });
 
-  const [lng, setLng] = useState(-73.98);
-  const [lat, setLat] = useState(40.698);
-  const [zoom, setZoom] = useState(11);
-
-  //  Function: fetch async from API and do some cleaning
-  async function getLocation(updateSource) {
-    // Make a GET request to the API and return the geojson file
-    try {
-      const response = await fetch(
-        // Examples for external API:
-        // "https://data.cityofnewyork.us/resource/mu46-p9is.geojson",
-        // "https://data.cityofnewyork.us/resource/erm2-nwe9.geojson?agency=DPR", // filter for DPR
-        // Fetch from our API.
-
-        "/tree11_collection.geojson" // api/data
-      );
-      // get response
-      const data = await response.json();
-
-      // Function: clean data and check for null, remove and set limit/filter to 900 entries as failsave
-      const cleanData = function (d) {
-        const nonNullData = d
-          .filter((feature) => feature.geometry !== null)
-          .slice(0, 2400); // filter amount!!
-        return nonNullData;
-      };
-
-      const cleanedData = cleanData(data.features);
-      console.log("cleanedData", cleanedData);
-      // Function: set cleaned data in right format for mapbox 🥸
-
-      const allPoints = cleanedData.map((point) => ({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: point.geometry.coordinates,
-        },
-        properties: point.properties,
-      }));
-
-      // Return the locations as GeoJSON.
-      return {
-        type: "FeatureCollection",
-        features: allPoints,
-      };
-    } catch (err) {
-      // If the updateSource interval is defined, clear the interval to stop updating the source.
-      if (updateSource) clearInterval(updateSource);
-      throw new Error(err);
-    }
-  }
-  // React: trigged if components is finsihed with rendering
   useEffect(() => {
-    if (map.current) return; // initialize map only once
+    if (!mapContainer.current || map.current) return undefined;
 
-    // Feat: initiate map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/daanvanderzwaag/cktupvbr41j0x17pb0cz0awwp",
-      center: [lng, lat],
-      zoom: zoom,
-    });
-
-    // Get DOM element of filters
-    const filterGroup = document.getElementById("filter-group");
-
-    // Check: see if there are no multiple maps rendered, to be sure delete all layers in that case
-    if (map.current.getLayer("311-report")) {
-      map.current.removeSource("311-data");
-      map.current.removeLayer("311-report");
+    if (!MAPBOX_TOKEN) {
+      return undefined;
     }
 
-    // Feat: set moving controls
-    map.current.on("move", () => {
-      setLng(map.current.getCenter().lng.toFixed(4));
-      setLat(map.current.getCenter().lat.toFixed(4));
-      setZoom(map.current.getZoom().toFixed(2));
+    const controller = new AbortController();
+    const mapInstance = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: MAP_STYLE,
+      center: [INITIAL_VIEW.longitude, INITIAL_VIEW.latitude],
+      zoom: INITIAL_VIEW.zoom,
     });
+    map.current = mapInstance;
+    mapInstance.addControl(new mapboxgl.NavigationControl(), "bottom-left");
 
-    map.current.on("load", async () => {
-      // Style: responsive map
+    let resizeFrame;
+    let disposed = false;
+    const resizeMap = () => {
+      resizeFrame = undefined;
+      if (!disposed && map.current === mapInstance) mapInstance.resize();
+    };
+    const scheduleResize = () => {
+      if (disposed || resizeFrame !== undefined) return;
+      resizeFrame = window.requestAnimationFrame(resizeMap);
+    };
+    const resizeObserver = new ResizeObserver(scheduleResize);
+    resizeObserver.observe(mapContainer.current);
+    window.addEventListener("resize", scheduleResize);
 
-      map.current.resize();
-
-      // Get the initial data from API (see getLocation())
-      const geojson = await getLocation();
-
-      // Add the API results as data source
-      map.current.addSource("311-data", {
-        type: "geojson",
-        data: geojson,
-        // cluster: true,
-        // clusterMaxZoom: 12, // Max zoom to cluster points on
-        // clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
+    const handleMove = () => {
+      const center = mapInstance.getCenter();
+      setView({
+        longitude: center.lng.toFixed(4),
+        latitude: center.lat.toFixed(4),
+        zoom: mapInstance.getZoom().toFixed(2),
       });
+    };
 
-      // Feat: toggle locations per bourough
-      for (const feature of geojson.features) {
-        // Set filter on property type, in our case the borough
-        // NOTE: set same as `filter: ["==", "boroughcode", borough]`
+    mapInstance.on("moveend", handleMove);
+    mapInstance.on("load", async () => {
+      try {
+        const geojson = await loadLocations(controller.signal);
+        if (controller.signal.aborted) return;
 
-        const borough = feature.properties.boroughcode;
-        const layerID = `id-${borough}`;
+        mapInstance.addSource(SOURCE_ID, { type: "geojson", data: geojson });
 
-
-        // Add a layer for this symbol type if it hasn't been added already.
-        if (!map.current.getLayer(layerID)) {
-          map.current.addLayer({
-            id: layerID,
-            source: "311-data",
+        BOROUGHS.forEach((borough) => {
+          const layerId = `borough-${borough.toLowerCase().replaceAll(" ", "-")}`;
+          mapInstance.addLayer({
+            id: layerId,
+            source: SOURCE_ID,
             type: "circle",
+            layout: { visibility: boroughsRef.current.has(borough) ? "visible" : "none" },
             paint: {
-              "circle-radius": 5,
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 3, 14, 7],
               "circle-color": "#ffe600",
+              "circle-opacity": 0.8,
+              "circle-stroke-color": "#29270f",
+              "circle-stroke-width": 1,
             },
-            filter: ["==", "boroughcode", borough],
+            filter: ["==", ["get", "borough"], borough],
           });
 
-          // Add checkbox and label elements for the layer.
-          const input = document.createElement("input");
-          input.type = "checkbox";
-          input.id = layerID;
-          input.checked = true;
-          filterGroup.appendChild(input);
+          mapInstance.on("click", layerId, (event) => {
+            const feature = event.features?.[0];
+            if (!feature) return;
+            const coordinates = feature.geometry.coordinates.slice();
 
-          const label = document.createElement("label");
+            while (Math.abs(event.lngLat.lng - coordinates[0]) > 180) {
+              coordinates[0] += event.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
 
-          label.setAttribute("for", layerID);
-          label.textContent = borough;
-          filterGroup.appendChild(label);
-
-          // When the checkbox changes, update the visibility of the layer.
-          input.addEventListener("change", (e) => {
-            map.current.setLayoutProperty(
-              layerID,
-              "visibility",
-              e.target.checked ? "visible" : "none"
-            );
+            new mapboxgl.Popup({ className: styles.mapPopup })
+              .setLngLat(coordinates)
+              .setDOMContent(createPopupContent(feature.properties))
+              .addTo(mapInstance);
           });
+          mapInstance.on("mouseenter", layerId, () => {
+            mapInstance.getCanvas().style.cursor = "pointer";
+          });
+          mapInstance.on("mouseleave", layerId, () => {
+            mapInstance.getCanvas().style.cursor = "";
+          });
+        });
+
+        setStatus({ state: "ready", count: geojson.features.length, message: "" });
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setStatus({ state: "error", count: 0, message: error.message });
         }
       }
     });
-    // Feat: loader - hide loading bar once tiles from geojson are loaded
-    map.current.on("data", function (e) {
-      if (e.dataType === "source" && e.sourceId === "311-data") {
-        document.getElementById("loader").style.visibility = "hidden";
+    mapInstance.on("error", (event) => {
+      if (event?.error?.message) {
+        setStatus((current) =>
+          current.state === "loading"
+            ? { state: "error", count: 0, message: "The map style could not be loaded." }
+            : current
+        );
       }
     });
 
-    // Set IDS for easy access for interactitvy
-    const plottedElements = [
-      "id-Manhattan",
-      "id-Bronx",
-      "id-Brooklyn",
-      "id-Harlem",
-      "id-Queens",
-      "id-Staten Island",
-      "unclustered-point",
-      "clusters",
-    ];
+    return () => {
+      disposed = true;
+      controller.abort();
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", scheduleResize);
+      if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);
+      mapInstance.remove();
+      map.current = null;
+    };
+  }, []);
 
-    // Feat: When a click event occurs on a feature in the unclustered-point layer, open a popup at the location of the feature, with description HTML from its properties.
-    map.current.on("click", [...plottedElements], (e) => {
-      const coordinates = e.features[0].geometry.coordinates.slice();
-
-      map.current.easeTo({
-        center: coordinates,
-        zoom: zoom,
-      });
-
-      // Get 'all relevent' properties from passed data e.g street, time, date etc.
-      const allFeatureInfo = e.features[0].properties;
-
-      // Chore: Ensure that if the map is zoomed out such that multiple copies of the feature are visible, the  popup appears over the copy being pointed to.
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      }
-
-      // Show HTML inside popup
-      new mapboxgl.Popup({ className: styles.mapPopup })
-        .setLngLat(coordinates)
-        .setHTML(
-          `<div>
-            <ul>
-              <li>
-                <span>SR Category</span>
-                <span>${allFeatureInfo.srcategory}</span>
-              </li>
-              <li>
-                <span>SR Type</span>
-                <span>${allFeatureInfo.srtype}</span>
-              </li>
-              <li>
-                <span>SR Resolution</span>
-                <span>${allFeatureInfo.srresolution}</span>
-              </li>
-              <li>
-                <span>Status</span>
-                <span>${allFeatureInfo.srstatus}</span>
-              </li>
-              <li>
-                <span>Risk Rating</span>
-                <span>${allFeatureInfo.riskrating}</span>
-              </li>
-              <li>
-                <span>Request Creation Date</span>
-                <span>${allFeatureInfo.SRCreatedDate}</span>
-              </li>
-              <li>
-                <span>Request Closed Date</span>
-                <span>${allFeatureInfo.SRClosedDate}</span>
-              </li>
-              <li>
-                <span>WO Type</span>
-                <span>${allFeatureInfo.wotype}</span>
-              </li>
-            </ul>
-
-        </div>`
-        )
-        .addTo(map.current);
-    });
-
-    // Feat: toggle mouse as pointer for UX
-    map.current.on("mouseenter", [...plottedElements], () => {
-      map.current.getCanvas().style.cursor = "pointer";
-    });
-    map.current.on("mouseleave", [...plottedElements], () => {
-      map.current.getCanvas().style.cursor = "";
-    });
-
-    // Feat: Update the source from the API every ~30minutes
-    const updateSource = setInterval(async () => {
-      const geojson = await getLocation(updateSource);
-      map.current.getSource("311DataFresh").setData(geojson);
-    }, 86400000); // interval reloads every 24 hours
-  });
+  function toggleBorough(borough) {
+    const next = new Set(boroughsRef.current);
+    if (next.has(borough)) next.delete(borough);
+    else next.add(borough);
+    boroughsRef.current = next;
+    setVisibleBoroughs(next);
+    const layerId = `borough-${borough.toLowerCase().replaceAll(" ", "-")}`;
+    if (map.current?.getLayer(layerId)) {
+      map.current.setLayoutProperty(layerId, "visibility", next.has(borough) ? "visible" : "none");
+    }
+  }
 
   return (
-    <div className={styles.mapWrapper}>
-      <div className={styles.mapSidebar}>
-        Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+    <section className={styles.mapWrapper} aria-label="NYC forestry service request map">
+      <div className={styles.mapSidebar} aria-live="polite">
+        Longitude: {view.longitude} | Latitude: {view.latitude} | Zoom: {view.zoom}
       </div>
 
-      <nav id="filter-group" className={styles.filterGroup}></nav>
-      <div className={styles.mapLoader} id="loader">
-        <p>
-          Loading the trees <span>🍃</span>{" "}
-        </p>
-      </div>
+      <fieldset className={styles.filterGroup}>
+        <legend>Show boroughs</legend>
+        {BOROUGHS.map((borough) => {
+          const id = `filter-${borough.toLowerCase().replaceAll(" ", "-")}`;
+          return (
+            <React.Fragment key={borough}>
+              <input
+                id={id}
+                type="checkbox"
+                checked={visibleBoroughs.has(borough)}
+                onChange={() => toggleBorough(borough)}
+              />
+              <label htmlFor={id}>{borough}</label>
+            </React.Fragment>
+          );
+        })}
+      </fieldset>
+
+      {status.state === "loading" && (
+        <div className={styles.mapLoader} role="status">
+          <p>Loading the trees <span aria-hidden="true">🍃</span></p>
+        </div>
+      )}
+      {status.state === "error" && (
+        <div className={styles.mapLoader} role="alert">
+          <p>{status.message}</p>
+        </div>
+      )}
+      {status.state === "ready" && (
+        <p className={styles.mapSummary}>{status.count.toLocaleString()} historical records loaded; {visibleBoroughs.size} of {BOROUGHS.length} boroughs enabled</p>
+      )}
       <div ref={mapContainer} className={styles.mapContainer} />
-    </div>
+    </section>
   );
 }

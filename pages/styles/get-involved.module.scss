@@ -1,6 +1,6 @@
 // add all classes for the Get Involved page in CSS
 .container {
-  padding: 0 2rem;
+  padding: 0;
 }
 .main {
   min-height: calc(100vh - var(--magicNumber));
@@ -216,15 +216,20 @@
 // All CSS below can be removed, just for keeping the page tidy while nothing is there
 
 .grid {
-  display: flex;
-  //align-items: center;
-  justify-content: left;
-  flex-wrap: wrap;
-  max-width: 1900px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+
+  a,
+  .card {
+    width: 100%;
+  }
 }
 
 .card {
-  margin: 1rem;
+  height: 100%;
+  margin: 0;
   padding: 1.5rem;
   text-align: left;
   color: #000000;
@@ -233,7 +238,7 @@
   border: 1px solid rgba(0,0,0, 0.3);
   border-radius: 10px;
   transition: color 0.15s ease, border-color 0.15s ease;
-  max-width: calc(var(--magicNumber) * 8);
+  max-width: none;
   // this is a SASS implementation of CSS; aka nesting of classes
   &:hover {
     cursor: pointer;
@@ -256,4 +261,110 @@
   margin: 0;
   font-size: 1.25rem;
   line-height: 1.5;
+}
+
+@media (max-width: 1600px) {
+  .rowInfo {
+    flex-direction: column;
+  }
+
+  .columnInfo,
+  .columnTitle {
+    width: 100%;
+  }
+
+  .columnInfo {
+    margin-left: 0;
+  }
+
+  .navigation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem 0 2rem;
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    nav span {
+      margin-right: 0;
+    }
+  }
+}
+
+@media (max-width: 1100px) {
+  .rowInfo {
+    flex-direction: column;
+  }
+
+  .columnInfo,
+  .columnTitle {
+    width: 100%;
+  }
+
+  .columnInfo {
+    margin-left: 0;
+  }
+
+  .navigation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem 0 2rem;
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    nav span {
+      margin-right: 0;
+    }
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .grid a,
+  .card {
+    width: 100%;
+    max-width: none;
+  }
+
+  .card {
+    height: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0;
+  }
+
+  .main {
+    margin: 12px;
+    padding: 16px;
+  }
+
+  .title,
+  .numbersBig {
+    font-size: clamp(54px, 20vw, 92px);
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
 }

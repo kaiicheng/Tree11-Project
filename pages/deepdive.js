@@ -1,13 +1,12 @@
 
-/* eslint-disable react/no-unescaped-entities */
-
 import Header from "../components/header/header";
 import Footer from "../components/footer/footer";
 import Button from "../components/buttons/buttons";
-import StackedBarChart from "../components/charts/StackedBarChart";
+import PageHeader from "../components/page-header/page-header";
 import LineChart from "../components/charts/LineChart";
 import Link from "next/link";
-import { datafallback, pending_wo_by_type, sr_by_source } from "../data/dataCharts.js";
+import fs from "fs";
+import path from "path";
 
 import Map from "../components/map/map";
 
@@ -21,42 +20,13 @@ function VizTitle({ children, color }) {
   );
 }
 
-export default function Deepdive() {
+export default function Deepdive({ pendingWorkOrders, summary, manifest }) {
   return (
     <div className={styles.container}>
       <Header pageTitle="Data Deepdive" />
 
-      <link
-        href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.0/mapbox-gl.css"
-        rel="stylesheet"
-      />
-
       <main className={styles.main}>
-        <section className={styles.rowInfo}>
-          <div className={styles.columnTitle}>
-            <h1 className={styles.title}>
-              NYC Tree11{" "}
-              <span className={styles.title_sub}>Deepdive</span>
-            </h1>
-          </div>
-          <div className={styles.columnInfo}>
-            <div className={styles.navigation}>
-              <nav>
-                <Button href={"/"}>Home</Button>
-                <Button href={"/intro"}>About</Button>
-                <Button href={"/metrics"}>Metrics</Button>
-                <Button href={"/deepdive"}>Deepdive</Button>
-              </nav>
-              <Button href={"/get-involved"}>Get Involved</Button>
-            </div>
-            <p className={styles.paragraph}>
-            Collaboration between cornell tech and NYCDPR
-              focused on visualization, communication, and contextualization of public data to
-              bring new yorkers insight into how forestry service requests
-              are addressed by the new york city department of parks and recreaction.
-            </p>
-          </div>
-        </section>
+        <PageHeader accent="Deepdive" showDescription />
         <section className={styles.dataGrid}>
           <div className={styles.dataVizMap}>
             <Map />
@@ -80,7 +50,7 @@ export default function Deepdive() {
                         <VizTitle >
                           GRAPH OF Pending Work orders by Type
                         </VizTitle>
-                        <LineChart data={pending_wo_by_type}/>
+                        <LineChart data={pendingWorkOrders}/>
                       </div>
                     </div>
                     {/* </section> */}
@@ -134,10 +104,10 @@ export default function Deepdive() {
                     <div className={styles.dataVizLine}>
                       <div className={styles.lineNumbers}>
                         <div className={styles.numberWrapper}>
-                          <span className={styles.numbersBig}>61093</span>
+                          <span className={styles.numbersBig}>{manifest.datasets.service_requests.rows.toLocaleString()}</span>
                           <span className={styles.numbersTag_card}>
                             {" "}
-                            service requests submitted in nyc this year
+                            service requests in the current analysis window
                           </span>
                         </div>
                       </div>
@@ -162,10 +132,10 @@ export default function Deepdive() {
                     <div className={styles.dataVizLine}>
                       <div className={styles.lineNumbers}>
                         <div className={styles.numberWrapper}>
-                          <span className={styles.numbersBig}>23453</span>
+                          <span className={styles.numbersBig}>{summary.inspections_in_period.toLocaleString()}</span>
                           <span className={styles.numbersTag_card}>
                             {" "}
-                            inspections completed in nyc this year
+                            inspections in the current analysis window
                           </span>
                         </div>
                       </div>
@@ -179,7 +149,7 @@ export default function Deepdive() {
                     </p>
                     <p>Cases in which a request might not lead to a work order after inspection
                       include when the forester is unable to locate the tree in question
-                     or the decribed condition is not found,
+                     or the described condition is not found,
                       when it is determined that alternate utility work is required, or 
                       if the forester chooses to waitlist the site.</p>
                   </div>
@@ -190,10 +160,10 @@ export default function Deepdive() {
                     <div className={styles.dataVizLine}>
                       <div className={styles.lineNumbers}>
                         <div className={styles.numberWrapper}>
-                          <span className={styles.numbersBig}>4718</span>
+                          <span className={styles.numbersBig}>{manifest.datasets.work_orders.rows.toLocaleString()}</span>
                           <span className={styles.numbersTag_card}>
                             {" "}
-                            work orders completed in nyc this year
+                            work orders in the current analysis window
                           </span>
                         </div>
                       </div>
@@ -252,4 +222,13 @@ export default function Deepdive() {
       <Footer />
     </div>
   );
+}
+
+export async function getStaticProps() {
+  const dataDir = path.join(process.cwd(), "public", "data");
+  return { props: {
+    pendingWorkOrders: JSON.parse(fs.readFileSync(path.join(dataDir, "charts", "pending_work_orders_by_type.json"), "utf8")),
+    summary: JSON.parse(fs.readFileSync(path.join(dataDir, "summary.json"), "utf8")),
+    manifest: JSON.parse(fs.readFileSync(path.join(dataDir, "manifest.json"), "utf8")),
+  }};
 }

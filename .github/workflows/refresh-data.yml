@@ -1,0 +1,53 @@
+name: Refresh NYC Forestry data
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+on:
+  schedule:
+    - cron: "17 14 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install and test pipeline
+        run: |
+          python -m pip install -e ./pipeline[dev]
+          pytest pipeline/tests
+      - name: Full, atomic refresh
+        env:
+          SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
+        run: |
+          python -m tree11_pipeline.cli build --full
+          python -m tree11_pipeline.cli validate-history
+          python -m tree11_pipeline.cli validate
+      - name: Write refresh summary
+        if: always()
+        run: |
+          echo "## NYC Forestry refresh" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f public/data/manifest.json ]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            python -c "import json; d=json.load(open('public/data/manifest.json')); s=d.get('refresh',{}).get('sources',{}); stats={k:{x:v.get(x) for x in ('pages_fetched','retry_count','timeout_count','average_rows_per_second','final_page_size')} for k,v in s.items()}; h=d.get('history',{}); print(json.dumps({'snapshot_id':d.get('snapshot_id'),'generated_at':d.get('generated_at'),'source_rows':d.get('source_rows'),'change_counts':d.get('change_counts'),'history':{'snapshots':h.get('snapshots_retained'),'events':h.get('events'),'orphan_relationships':h.get('relationship_quality',{}).get('orphan_relationships')},'ingestion':stats}, indent=2))" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload refresh diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: refresh-diagnostics-${{ github.run_id }}
+          path: |
+            public/data/manifest.json
+            public/data/summary.json
+          if-no-files-found: warn
+      - name: Commit changed serving assets
+        run: |
+          git add public/data
+          git diff --cached --quiet || git -c user.name="tree11-data-bot" -c user.email="tree11-data-bot@users.noreply.github.com" commit -m "chore(data): weekly NYC Forestry refresh [skip ci]"
+          git push

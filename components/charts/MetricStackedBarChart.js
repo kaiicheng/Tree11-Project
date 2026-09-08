@@ -20,32 +20,16 @@ ChartJS.register(
     Legend
 );
 
-function getSimilarColor(inputColor,i) {
-    inputColor = inputColor.slice(1);
-    // Convert the hex color to RGB values
-    const r = parseInt(inputColor.slice(0, 2), 16);
-    const g = parseInt(inputColor.slice(2, 4), 16);
-    const b = parseInt(inputColor.slice(4, 6), 16);
-    
-    const newR = Math.min(255, r + 20*i);
-    const newG = Math.min(255, g + 10*i);
-    const newB = Math.min(255, b + 10*i);
-  
-    // Convert the new RGB values back to hex
-    const newColor = `#${(1 << 24 | newR << 16 | newG << 8 | newB).toString(16).slice(1)}`;
-    return newColor;
-  }
+const CHART_COLORS = ["#6B4F1D", "#A06F16", "#D29A24", "#2F6B5F", "#587A8A", "#765D8B"];
 
 export default function StackedBarChart(dataOps) {
     // console.log("Stack bar called")
     const [data,setData] = useState([])
+    const [error, setError] = useState("")
     const path = dataOps.data
     const title = dataOps.title
     const options = {
         plugins: {
-            title: {
-                display: false,
-            },
             legend: {
                 display: false,
             },
@@ -65,13 +49,16 @@ export default function StackedBarChart(dataOps) {
         },
     };
 
-    if (dataOps.custom) {
-        console.log(dataOps.customData)
-        return (<Bar options={options} data={dataOps.customData}/>)
-    }
-    async function getData(path) {
-        let rawData = Papa.parse(await fetchCsv(path));
-        rawData = rawData.data
+    useEffect(() => {
+      if (dataOps.custom || !path) return;
+
+      const controller = new AbortController();
+
+      async function getData() {
+        try {
+        const response = await fetch(path, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Unable to load chart data (${response.status})`);
+        let rawData = Papa.parse(await response.text(), { skipEmptyLines: true }).data;
         
         //  Split label and data
         let labels = []
@@ -96,7 +83,7 @@ export default function StackedBarChart(dataOps) {
         const data = {
             labels,
             datasets: cols.map((val,i) => {
-                let color = getSimilarColor("#A88A53", i)
+                const color = CHART_COLORS[i % CHART_COLORS.length]
                 return {
                     label: cols[i],
                     data: groupData[i],
@@ -107,27 +94,24 @@ export default function StackedBarChart(dataOps) {
                 }
             })
         };      
-        setData(data)   
-    }
-    
-    async function fetchCsv(path) {
-        const response = await fetch(path);
-        const reader = response.body.getReader();
-        const result = await reader.read();
-        const decoder = new TextDecoder('utf-8');
-        const csv = await decoder.decode(result.value);
-        // console.log('csv', csv);
-        return csv;
-    }    
-    
-    useEffect(() => {
-        getData(path)
-    }, [])
+        setData(data)
+        setError("")
+        } catch (fetchError) {
+          if (fetchError.name !== "AbortError") setError(fetchError.message);
+        }
+      }
+
+      getData();
+      return () => controller.abort();
+    }, [dataOps.custom, path])
+
+    if (dataOps.custom) return <Bar options={options} data={dataOps.customData}/>;
+    if (error) return <p role="alert">{error}</p>;
     
     // console.log(data)
 
     return (
-        data.length == 0 ? <div></div> : <Bar options={options} data={data}/> 
+        data.length == 0 ? <p role="status">Loading chart…</p> : <Bar options={options} data={data}/>
     )
     // return <Bar options={options} data={data} />;
 }

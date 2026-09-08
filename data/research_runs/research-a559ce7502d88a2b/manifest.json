@@ -1,0 +1,19 @@
+{
+  "config_hash": "8e50e7df9f435037b4ead351048d49be1eef9e53a296c1c9ac9678a1c04bedc1",
+  "experiment_id": "research-a559ce7502d88a2b",
+  "git_commit": "904760f653db38181a1ccd84ac0f3b9849db5578",
+  "input_snapshot_ids": [
+    "state-355a2ee2a9e18212",
+    "state-48654ed8ff8a7aea",
+    "state-ab6fb444429c1751"
+  ],
+  "metric_versions": {
+    "current_age_hours": 1,
+    "inspection_count": 1,
+    "request_count": 1,
+    "request_to_first_inspection_hours": 1,
+    "request_to_first_work_order_hours": 1,
+    "work_order_count": 1,
+    "work_order_to_completion_hours": 1
+  }
+}

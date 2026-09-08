@@ -6,7 +6,7 @@
 
 // All CSS below can be removed, just for keeping the page tidy while nothing is there
 .container {
-  padding: 0 2rem;
+  padding: 0;
 }
 
 .main {
@@ -34,6 +34,129 @@
   font-size: 1.1rem;
   font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
     Bitstream Vera Sans Mono, Courier New, monospace;
+}
+
+@media (max-width: 1600px) {
+  .rowInfo {
+    flex-direction: column;
+  }
+
+  .columnInfo,
+  .columnTitle {
+    width: 100%;
+  }
+
+  .columnInfo {
+    margin-left: 0;
+  }
+
+  .navigation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem 0 2rem;
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    nav span {
+      margin-right: 0;
+    }
+  }
+}
+
+@media (max-width: 1100px) {
+  .rowInfo,
+  .dataGrid {
+    flex-direction: column;
+  }
+
+  .columnInfo,
+  .columnTitle,
+  .dataVizMap,
+  .rightCol {
+    width: 100%;
+  }
+
+  .columnInfo {
+    margin-left: 0;
+  }
+
+  .navigation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem 0 2rem;
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    nav span {
+      margin-right: 0;
+    }
+  }
+
+  .dataVizMap {
+    min-height: 620px;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0;
+  }
+
+  .main {
+    margin: 12px;
+    padding: 16px;
+  }
+
+  .title,
+  .title_sub,
+  .numbersBig,
+  .numbersFigure {
+    font-size: clamp(54px, 20vw, 92px);
+  }
+
+  .dataVizMap {
+    min-height: 70vh;
+  }
+
+  .dataVizGraph .lineGraph {
+    overflow-x: auto;
+    padding: 1rem;
+
+    canvas {
+      min-width: 560px;
+    }
+  }
+
+  .grid {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .card,
+  .card_process {
+    width: 100%;
+    max-width: none;
+    margin: 0.5rem 0;
+  }
+
+  .card_process_arrow {
+    display: none;
+  }
+
+  .dataVizLine .lineNumbers {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 
@@ -211,7 +334,8 @@
 }
 
 .rightCol {
-  width: 50%;
+  width: calc(50% - calc(var(--magicNumber) / 4));
+  min-width: 0;
 }
 
 .dataVizMap{
@@ -250,7 +374,8 @@
 
 .dataVizMap {
   position: relative;
-  width: 50%;
+  width: calc(50% - calc(var(--magicNumber) / 4));
+  min-width: 0;
 }
 
 .dataVizTop {

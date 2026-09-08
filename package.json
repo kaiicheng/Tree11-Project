@@ -2,28 +2,34 @@
   "name": "tree11-dashboard",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@types/faker": "^6.6.9",
-    "chart.js": "^3.9.1",
-    "d3": "^7.8.5",
-    "faker": "^5.5.3",
-    "json-loader": "^0.5.7",
-    "mapbox-gl": "^2.9.2",
-    "next": "^12.3.4",
-    "papaparse": "^5.4.1",
-    "react": "18.2.0",
-    "react-chartjs-2": "^4.3.1",
-    "react-dom": "18.2.0"
+    "chart.js": "4.5.1",
+    "mapbox-gl": "3.30.0",
+    "next": "16.3.4",
+    "papaparse": "5.7.0",
+    "react": "19.2.8",
+    "react-chartjs-2": "5.3.1",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "eslint": "8.23.0",
-    "eslint-config-next": "12.3.0",
-    "sass": "^1.54.9"
+    "@types/node": "^26.4.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.3.4",
+    "sass": "1.104.0",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3"
   }
 }

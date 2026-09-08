@@ -1,0 +1,1 @@
+{"datasets":[{"data":[2,9,2],"label":"Added records"},{"data":[4,0,4],"label":"Changed records"},{"data":[5,0,5],"label":"Removed records"}],"format_version":2,"labels":["state-48654ed8ff8a7aea","state-355a2ee2a9e18212","state-ab6fb444429c1751"]}

@@ -1,0 +1,313 @@
+{
+  "anomalies": {
+    "data_quality": [],
+    "operational": [],
+    "schema_version": 1
+  },
+  "backlog": {
+    "age_bucket_days": [
+      7,
+      30,
+      90,
+      180
+    ],
+    "age_hours": {
+      "count": 0,
+      "median": null,
+      "p25": null,
+      "p75": null,
+      "p90": null,
+      "suppressed": false
+    },
+    "aging_buckets": {},
+    "backlog_count": 0,
+    "completed_or_closed_requests": null,
+    "net_backlog_change": null,
+    "new_requests": null,
+    "note": "Current age applies only to source-status-open requests; it is not a completion duration.",
+    "observation_end": "2026-09-07T02:05:21.794278+00:00",
+    "open_requests": 0,
+    "open_work_orders": 0,
+    "schema_version": 1
+  },
+  "cohorts": {
+    "note": "Rates are null until the cohort has the stated follow-up horizon.",
+    "rows": [
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-01",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 7,
+        "inspection_rate": 0.0,
+        "observed_count": 2,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-01",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 30,
+        "inspection_rate": 0.0,
+        "observed_count": 2,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-01",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 60,
+        "inspection_rate": 0.0,
+        "observed_count": 2,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-01",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 90,
+        "inspection_rate": 0.0,
+        "observed_count": 2,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-01",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 180,
+        "inspection_rate": 0.0,
+        "observed_count": 2,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-07",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 7,
+        "inspection_rate": 0.3333333333333333,
+        "observed_count": 3,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-07",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 30,
+        "inspection_rate": 0.3333333333333333,
+        "observed_count": 3,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 0,
+        "cohort_month": "2026-07",
+        "completion_rate": 0.0,
+        "eligible_for_horizon": true,
+        "horizon_days": 60,
+        "inspection_rate": 0.3333333333333333,
+        "observed_count": 3,
+        "work_order_rate": 0.0
+      },
+      {
+        "censored_before_horizon": 3,
+        "cohort_month": "2026-07",
+        "completion_rate": null,
+        "eligible_for_horizon": false,
+        "horizon_days": 90,
+        "inspection_rate": null,
+        "observed_count": 0,
+        "work_order_rate": null
+      },
+      {
+        "censored_before_horizon": 3,
+        "cohort_month": "2026-07",
+        "completion_rate": null,
+        "eligible_for_horizon": false,
+        "horizon_days": 180,
+        "inspection_rate": null,
+        "observed_count": 0,
+        "work_order_rate": null
+      }
+    ],
+    "schema_version": 1
+  },
+  "geography": {
+    "rows": [],
+    "schema_version": 1
+  },
+  "lifecycle_funnel": {
+    "schema_version": 1,
+    "stages": [
+      {
+        "count": 0,
+        "percentage_of_previous": null,
+        "percentage_of_requests": null,
+        "stage": "requests"
+      },
+      {
+        "count": 0,
+        "percentage_of_previous": null,
+        "percentage_of_requests": null,
+        "stage": "requests_with_inspection"
+      },
+      {
+        "count": 0,
+        "percentage_of_previous": null,
+        "percentage_of_requests": null,
+        "stage": "requests_with_work_order"
+      },
+      {
+        "count": 0,
+        "percentage_of_previous": null,
+        "percentage_of_requests": null,
+        "stage": "completed_work_orders"
+      }
+    ]
+  },
+  "metric_contracts": {
+    "metrics": [
+      {
+        "censoring_policy": "Not applicable",
+        "denominator_definition": "Current accepted source records; duplicate source IDs are rejected.",
+        "description": "Current accepted source records; duplicate source IDs are rejected.",
+        "grain": "service request",
+        "label": "Requests",
+        "metric_id": "request_count",
+        "metric_version": 1,
+        "minimum_sample_policy": "Suppress distribution statistics below minimum_group_n",
+        "numerator_definition": "Current accepted source records; duplicate source IDs are rejected.",
+        "timestamp_semantics": "Source creation timestamp",
+        "unit": "count"
+      },
+      {
+        "censoring_policy": "Not applicable",
+        "denominator_definition": "Current accepted source records; duplicate source IDs are rejected.",
+        "description": "Current accepted source records; duplicate source IDs are rejected.",
+        "grain": "inspection",
+        "label": "Inspections",
+        "metric_id": "inspection_count",
+        "metric_version": 1,
+        "minimum_sample_policy": "Suppress distribution statistics below minimum_group_n",
+        "numerator_definition": "Current accepted source records; duplicate source IDs are rejected.",
+        "timestamp_semantics": "Source inspection timestamp",
+        "unit": "count"
+      },
+      {
+        "censoring_policy": "Not applicable",
+        "denominator_definition": "Current accepted source records; duplicate source IDs are rejected.",
+        "description": "Current accepted source records; duplicate source IDs are rejected.",
+        "grain": "work order",
+        "label": "Work orders",
+        "metric_id": "work_order_count",
+        "metric_version": 1,
+        "minimum_sample_policy": "Suppress distribution statistics below minimum_group_n",
+        "numerator_definition": "Current accepted source records; duplicate source IDs are rejected.",
+        "timestamp_semantics": "Source work-order creation timestamp",
+        "unit": "count"
+      },
+      {
+        "censoring_policy": "Unobserved endpoints are excluded from completed-duration distribution and retained in survival data",
+        "denominator_definition": "Requests with valid request and inspection times",
+        "description": "Only non-negative source event timestamps; cases without the endpoint are right-censored.",
+        "grain": "service request",
+        "label": "Request to first inspection",
+        "metric_id": "request_to_first_inspection_hours",
+        "metric_version": 1,
+        "minimum_sample_policy": "Suppress distribution statistics below minimum_group_n",
+        "numerator_definition": "Observed request-to-first-inspection durations",
+        "timestamp_semantics": "Source event timestamps",
+        "unit": "hours"
+      },
+      {
+        "censoring_policy": "Unobserved endpoints are excluded from completed-duration distribution and retained in survival data",
+        "denominator_definition": "Requests with valid request and work-order times",
+        "description": "Only non-negative source event timestamps; cases without the endpoint are right-censored.",
+        "grain": "service request",
+        "label": "Request to first work order",
+        "metric_id": "request_to_first_work_order_hours",
+        "metric_version": 1,
+        "minimum_sample_policy": "Suppress distribution statistics below minimum_group_n",
+        "numerator_definition": "Observed request-to-first-work-order durations",
+        "timestamp_semantics": "Source event timestamps",
+        "unit": "hours"
+      },
+      {
+        "censoring_policy": "Open work orders are right-censored",
+        "denominator_definition": "Work orders with valid creation and completion times",
+        "description": "Only non-negative source event timestamps; cases without the endpoint are right-censored.",
+        "grain": "work order",
+        "label": "Work order to completion",
+        "metric_id": "work_order_to_completion_hours",
+        "metric_version": 1,
+        "minimum_sample_policy": "Suppress distribution statistics below minimum_group_n",
+        "numerator_definition": "Observed work-order completion durations",
+        "timestamp_semantics": "Source completion timestamp",
+        "unit": "hours"
+      },
+      {
+        "censoring_policy": "Closed records are excluded",
+        "denominator_definition": "Open entities with valid start times",
+        "description": "Age at the accepted observation time, not a completion duration.",
+        "grain": "open entity",
+        "label": "Current open age",
+        "metric_id": "current_age_hours",
+        "metric_version": 1,
+        "minimum_sample_policy": "Suppress distribution statistics below minimum_group_n",
+        "numerator_definition": "Open entities with valid start times",
+        "timestamp_semantics": "Accepted snapshot observation time",
+        "unit": "hours"
+      }
+    ],
+    "schema_version": 1
+  },
+  "overview": {
+    "censoring": {
+      "open_or_uncompleted_requests": 5,
+      "policy": "Open cases are right-censored and excluded from completed-duration distributions."
+    },
+    "inspection_count": 0,
+    "minimum_group_n": 5,
+    "observation_end": "2026-09-07T02:05:21.794278+00:00",
+    "request_count": 0,
+    "requests_with_inspection": 0,
+    "requests_with_work_order": 0,
+    "risk_assessment_count": 0,
+    "schema_version": 1,
+    "timing": {
+      "request_to_first_inspection_hours": {
+        "count": 1,
+        "median": null,
+        "p25": null,
+        "p75": null,
+        "p90": null,
+        "suppressed": true
+      },
+      "request_to_first_work_order_hours": {
+        "count": 0,
+        "median": null,
+        "p25": null,
+        "p75": null,
+        "p90": null,
+        "suppressed": false
+      },
+      "work_order_to_completion_hours": {
+        "count": 0,
+        "median": null,
+        "p25": null,
+        "p75": null,
+        "p90": null,
+        "suppressed": false
+      }
+    },
+    "work_order_count": 0
+  },
+  "timing_monthly": {
+    "months": [],
+    "schema_version": 1
+  }
+}

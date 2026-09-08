@@ -2,16 +2,7 @@
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: false,
-
-  webpack: (config) => {
-    config.module.rules.push({
-      test: /\.geojson$/,
-      loader: "json-loader",
-    });
-
-    return config;
-  },
+  allowedDevOrigins: ["192.168.1.166"],
 };
 
 module.exports = nextConfig;

@@ -24,9 +24,10 @@
 }
 
 .mapWrapper {
-  position: relative;
-  height: 100%;
-  width: 100%;
+  position: absolute;
+  inset: 0;
+  height: auto;
+  width: auto;
   &:hover .vizTitle h3 {
     opacity: 1;
   }
@@ -61,6 +62,13 @@
   border-radius: 4px;
 }
 
+.filterGroup legend {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
 // Filters
 
 .filterGroup {
@@ -84,6 +92,8 @@
   right: 0;
   margin: 12px;
   border-radius: 4px;
+  border: 0;
+  padding: 0;
 }
 
 .filterGroup input[type="checkbox"]:first-child + label {
@@ -96,7 +106,9 @@
 }
 
 .filterGroup input[type="checkbox"] {
-  display: none;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .filterGroup input[type="checkbox"] + label {
@@ -122,6 +134,11 @@
 
 .filterGroup input[type="checkbox"] + label:hover {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+.filterGroup input[type="checkbox"]:focus-visible + label {
+  outline: 3px solid #fff;
+  outline-offset: -3px;
 }
 
 .filterGroup input[type="checkbox"]:checked + label:before {
@@ -150,22 +167,56 @@
       border: 1 solid rgba(255, 255, 255, 0.1);
     }
 
-    ul {
+    dl {
       margin: 0;
       padding: 0;
-      li {
-        list-style: none;
+
+      dt {
+        margin-top: 6px;
+        opacity: 0.7;
+      }
+
+      dd {
         margin: 0;
-        padding: 0;
-        span:first-of-type {
-          opacity: 0.6;
-          background-color: white;
-          border-radius: 12px;
-          padding: 2px 4px;
-          color: black;
-        }
+        overflow-wrap: anywhere;
       }
     }
+  }
+}
+
+.mapSummary {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 1;
+  margin: 0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font: 12px/20px monospace;
+}
+
+@media (max-width: 600px) {
+  .mapSidebar {
+    max-width: calc(100% - 156px);
+    margin: 8px;
+    padding: 5px 8px;
+  }
+
+  .filterGroup {
+    width: 132px;
+    margin: 8px;
+  }
+
+  .filterGroup input[type="checkbox"] + label {
+    padding: 8px;
+  }
+
+  .mapSummary {
+    left: 8px;
+    right: auto;
+    max-width: calc(100% - 16px);
   }
 }
 

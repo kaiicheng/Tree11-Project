@@ -1,6 +1,6 @@
 import React from 'react';
-import LineChart from './MetricLineChart';
+import BarPlot from './MetricBarChart';
 
 export default function WOMetric () {
-  return <LineChart data={"/data/wo_completed_weekly.csv"}/>
+  return <BarPlot data="/data/history/trend.json" title="Records changed between published refreshes" />
 };

@@ -9,12 +9,14 @@
 
 html,
 body {
+  max-width: 100%;
   padding: 0;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
   background-color: var(--c-black);
-  color: #fff5e5
+  color: #fff5e5;
+  overflow-x: clip;
 }
 
 a {

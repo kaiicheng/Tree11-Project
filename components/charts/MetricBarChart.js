@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Papa from 'papaparse';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -19,98 +18,44 @@ ChartJS.register(
     Tooltip,
     Legend
 );
-const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Requests yielding Inspections and Work Orders',
-      },
-    },
-};
+const CHART_COLORS = ["#6B4F1D", "#A06F16", "#D29A24", "#2F6B5F", "#587A8A", "#765D8B"];
 
-function getSimilarColor(inputColor) {
-    inputColor = inputColor.slice(1);
-    const random = Math.floor(Math.random() * 200 - 100);
+export default function BarPlot({ data: path, title = "Requests, inspections, and work orders" }) {
+    const [data,setData] = useState(null)
+    const [error, setError] = useState("")
+    const options = {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: title },
+        },
+    };
 
-    // Convert the hex color to RGB values
-    const r = parseInt(inputColor.slice(0, 2), 16);
-    const g = parseInt(inputColor.slice(2, 4), 16);
-    const b = parseInt(inputColor.slice(4, 6), 16);
-    
-    const newR = Math.min(255, r + random);
-    const newG = Math.min(255, g + random);
-    const newB = Math.min(255, b + random);
-  
-    // Convert the new RGB values back to hex
-    const newColor = `#${(1 << 24 | newR << 16 | newG << 8 | newB).toString(16).slice(1)}`;
-    return newColor;
-  }
-
-export default function BarPlot(dataPath) {
-    // const [rawData, setRawData] = useState([])
-    const [data,setData] = useState([])
-    const path = dataPath.data
-
-    async function getData(path) {
-        let rawData = Papa.parse(await fetchCsv(path));
-        rawData = rawData.data
-        console.log("called")
-        //  Split label and data
-        let labels = []
-        let cols = []
-        let groupData = []
-        
-        cols = rawData[0].slice(1)
-        for (let i = 1; i < rawData[0].length; i++) {
-            const tempGroup = []
-            for (let j = 1; j < rawData.length; j++) {
-                if (i == 1) {
-                    labels.push(rawData[j][0])
-                }
-                tempGroup.push(rawData[j][i])
-            }
-            groupData.push(tempGroup)
-        }
-        console.log("cols", cols)
-        console.log("groupData", groupData)
-        console.log("labels", labels)
-
-        const data = {
-            labels,
-            datasets: cols.map((val,i) => {
-                return {
-                    label: cols[i],
-                    data: groupData[i],
-                    // borderColor: "FFE500",
-                    backgroundColor: getSimilarColor("#B79D6B"),
-                    yAxisID: "y",
-                }
-            })
-        };      
-        setData(data)   
-    }
-    
-    async function fetchCsv(path) {
-        const response = await fetch(path);
-        const reader = response.body.getReader();
-        const result = await reader.read();
-        const decoder = new TextDecoder('utf-8');
-        const csv = await decoder.decode(result.value);
-        // console.log('csv', csv);
-        return csv;
-    }    
     useEffect(() => {
-        getData(path)
-    }, [])
-    
-    console.log(data)
-    // return <Bar options={options} data={data} /> 
+      const controller = new AbortController();
+
+      async function getData() {
+        try {
+        const response = await fetch(path, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Unable to load chart data (${response.status})`);
+        if (!path.endsWith(".json")) throw new Error("Chart asset must be generated JSON");
+        const jsonData = await response.json();
+        setData({ ...jsonData, datasets: jsonData.datasets.map((series, i) => ({
+          ...series, backgroundColor: series.backgroundColor || CHART_COLORS[i % CHART_COLORS.length], yAxisID: "y",
+        })) });
+        setError("")
+        } catch (fetchError) {
+          if (fetchError.name !== "AbortError") setError(fetchError.message);
+        }
+      }
+
+      getData();
+      return () => controller.abort();
+    }, [path])
+
+    if (error) return <p role="alert">{error}</p>;
     
     return (
-        data.length == 0 ? <div></div> : <Bar options={options} data={data} /> 
+        data === null ? <p role="status">Loading chart…</p> : <><Bar options={options} data={data} /><details><summary>View chart data</summary><table><thead><tr><th>Period</th>{data.datasets.map(series => <th key={series.label}>{series.label}</th>)}</tr></thead><tbody>{data.labels.map((label, index) => <tr key={label}><th>{label}</th>{data.datasets.map(series => <td key={series.label}>{series.data[index]}</td>)}</tr>)}</tbody></table></details></>
     )
 }
