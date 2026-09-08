@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tree11-pipeline"
+version = "0.1.0"
+description = "Reproducible NYC Forestry data pipeline for Tree11"
+requires-python = ">=3.10"
+dependencies = ["requests>=2.31"]
+
+[project.optional-dependencies]
+parquet = ["pandas>=2.0", "pyarrow>=14"]
+dev = ["pytest>=8", "pandas>=2.0", "pyarrow>=14"]
+
+[project.scripts]
+tree11-pipeline = "tree11_pipeline.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]

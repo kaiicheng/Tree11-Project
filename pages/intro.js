@@ -1,7 +1,7 @@
 
 import Header from "../components/header/header"
 import Footer from "../components/footer/footer"
-import Button from "../components/buttons/buttons"
+import PageHeader from "../components/page-header/page-header"
 import Link from "next/link"
 
 import styles from "./styles/intro.module.scss"
@@ -12,24 +12,7 @@ export default function Intro() {
       <Header pageTitle="About"/>
 
       <main className={styles.main}>
-        <section className={styles.rowInfo}>
-          <div className={styles.columnTitle}>
-          <h1 className={styles.title}>NYC Tree11 <span className={styles.title_sub}>About</span></h1>
-          </div>
-          <div className={styles.columnInfo}>
-            <div className={styles.navigation}>
-              <nav>
-                <Button href={"/"}>Home</Button>
-                <Button href={"/intro"}>About</Button>
-                <Button href={"/metrics"}>Metrics</Button>
-                <Button href={"/deepdive"}>Deepdive</Button>
-              </nav>
-              <nav>
-              <Button href={"/get-involved"}>Get Involved</Button>
-              </nav>
-            </div>
-          </div>
-        </section> 
+        <PageHeader accent="About" dark />
         <section className={styles.dataGrid}>
           <div className={styles.rightCol}>
             <p className={styles.paragraph_sub}>

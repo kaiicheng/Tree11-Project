@@ -1,0 +1,25 @@
+{
+  "A": {"service_requests": [
+    {"globalid":"sr-main","createddate":"2026-01-01T00:00:00+00:00","updateddate":"2026-01-01T00:00:00+00:00","status":"Open","latitude":"40.7128","longitude":"-74.0060","source":"311","borough":"Manhattan"},
+    {"globalid":"sr-stable","createddate":"2026-01-01T00:00:00+00:00","status":"Open","latitude":"40.7130","longitude":"-74.0050","source":"311","borough":"Manhattan"},
+    {"globalid":"sr-gone","createddate":"2026-01-01T00:00:00+00:00","status":"Open","latitude":"40.7140","longitude":"-74.0040","source":"311","borough":"Manhattan"}], "inspections": [], "work_orders": [], "risk_assessments": []},
+  "B": {"service_requests": [
+    {"globalid":"sr-main","createddate":"2026-01-01T00:00:00+00:00","updateddate":"2026-01-02T00:00:00+00:00","status":"Open","latitude":"40.7128","longitude":"-74.0060","source":"311","borough":"Manhattan"},
+    {"globalid":"sr-stable","createddate":"2026-01-01T00:00:00+00:00","status":"Open","latitude":"40.7130","longitude":"-74.0050","source":"311","borough":"Manhattan"},
+    {"globalid":"sr-gone","createddate":"2026-01-01T00:00:00+00:00","status":"Open","latitude":"40.7140","longitude":"-74.0040","source":"311","borough":"Manhattan"}], "inspections": [
+    {"globalid":"in-1","servicerequestglobalid":"sr-main","createddate":"2026-01-02T06:00:00+00:00","inspectiondate":"2026-01-02T12:00:00+00:00","riskrating":"Low"}], "work_orders": [], "risk_assessments": []},
+  "C": {"service_requests": [
+    {"globalid":"sr-main","createddate":"2026-01-01T00:00:00+00:00","updateddate":"2026-01-03T00:00:00+00:00","status":"In Progress","latitude":"40.7128","longitude":"-74.0060","source":"311","borough":"Manhattan"},
+    {"globalid":"sr-stable","createddate":"2026-01-01T00:00:00+00:00","status":"Open","latitude":"40.7130","longitude":"-74.0050","source":"311","borough":"Manhattan"}], "inspections": [
+    {"globalid":"in-1","servicerequestglobalid":"sr-main","createddate":"2026-01-02T06:00:00+00:00","inspectiondate":"2026-01-02T12:00:00+00:00","riskrating":"Low"},
+    {"globalid":"in-2","servicerequestglobalid":"sr-main","createddate":"2026-01-03T06:00:00+00:00","inspectiondate":"2026-01-03T12:00:00+00:00","riskrating":"High"}], "work_orders": [
+    {"globalid":"wo-1","inspectionglobalid":"in-1","createddate":"2026-01-03T18:00:00+00:00","status":"Pending","wotype":"Pruning"}], "risk_assessments": [
+    {"globalid":"ra-1","inspectionglobalid":"in-1","riskrating":"High"}]},
+  "D": {"service_requests": [
+    {"globalid":"sr-main","createddate":"2026-01-01T00:00:00+00:00","updateddate":"2026-01-04T00:00:00+00:00","status":"Closed","latitude":"40.7128","longitude":"-74.0060","source":"311","borough":"Manhattan"},
+    {"globalid":"sr-stable","createddate":"2026-01-01T00:00:00+00:00","status":"Open","latitude":"40.7130","longitude":"-74.0050","source":"311","borough":"Manhattan"}], "inspections": [
+    {"globalid":"in-1","servicerequestglobalid":"sr-main","createddate":"2026-01-02T06:00:00+00:00","inspectiondate":"2026-01-02T12:00:00+00:00","riskrating":"Low"},
+    {"globalid":"in-2","servicerequestglobalid":"sr-main","createddate":"2026-01-03T06:00:00+00:00","inspectiondate":"2026-01-03T12:00:00+00:00","riskrating":"High"}], "work_orders": [
+    {"globalid":"wo-1","inspectionglobalid":"in-1","createddate":"2026-01-03T18:00:00+00:00","actualfinishdate":"2026-01-04T18:00:00+00:00","status":"Complete","wotype":"Pruning"}], "risk_assessments": [
+    {"globalid":"ra-1","inspectionglobalid":"in-1","riskrating":"High"}]}
+}

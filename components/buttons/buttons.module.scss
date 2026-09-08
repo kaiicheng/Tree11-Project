@@ -1,11 +1,24 @@
 // Add styles for the footer there
 
 .buttonSmall {
+  display: inline-block;
   background: rgba(0,0,0, 0.06);
   border-radius: var(--magicNumber);
   padding: 8px 12px;
+  white-space: nowrap;
   &:hover {
     background: rgba(0,0,0, 0.3);
     cursor: pointer;
+  }
+}
+
+.active {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+@media (max-width: 600px) {
+  .buttonSmall {
+    padding: 7px 10px;
+    font-size: 0.9rem;
   }
 }

@@ -52,3 +52,27 @@
 .active {
     background: #FFE500;
 }
+
+@media (max-width: 800px) {
+    .graphContainer,
+    .buttonContainer {
+        width: 100%;
+    }
+
+    .contentContainer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .content {
+        width: 100%;
+        max-width: none;
+        margin: 0.5rem 0;
+    }
+
+    .buttonContainer {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+}

@@ -23,60 +23,36 @@ ChartJS.register(
     Legend,
     LineElement
 );
-const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Requests yielding Inspections and Work Orders',
-      },
-      tooltip: {
-        enabled: false
-      }
-    },
-    scales : {
-      x: {
-        ticks: {
-          callback: (value,i) => {
-            if (i % 10 == 0) {
-                return value
+const CHART_COLORS = ["#6B4F1D", "#A06F16", "#D29A24", "#2F6B5F", "#587A8A", "#765D8B"];
+
+export default function LinePlot({ data: path, title = "Completed work orders by week" }) {
+    // const [rawData, setRawData] = useState([])
+    const [data,setData] = useState([])
+    const [error, setError] = useState("")
+    const options = {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: title },
+          tooltip: { enabled: true }
+        },
+        scales : {
+          x: {
+            ticks: {
+              callback: (value, i) => i % 10 === 0 ? value : undefined
             }
           }
         }
-      }
-    }
-};
+    };
 
-function getSimilarColor(inputColor) {
-    inputColor = inputColor.slice(1);
-    const random = Math.floor(Math.random() * 200 - 100);
+    useEffect(() => {
+      const controller = new AbortController();
 
-    // Convert the hex color to RGB values
-    const r = parseInt(inputColor.slice(0, 2), 16);
-    const g = parseInt(inputColor.slice(2, 4), 16);
-    const b = parseInt(inputColor.slice(4, 6), 16);
-    
-    const newR = Math.min(255, r + random);
-    const newG = Math.min(255, g + random);
-    const newB = Math.min(255, b + random);
-  
-    // Convert the new RGB values back to hex
-    const newColor = `#${(1 << 24 | newR << 16 | newG << 8 | newB).toString(16).slice(1)}`;
-    return newColor;
-  }
-
-export default function LinePlot(dataPath) {
-    // const [rawData, setRawData] = useState([])
-    const [data,setData] = useState([])
-    const path = dataPath.data
-
-    async function getData(path) {
-        let rawData = Papa.parse(await fetchCsv(path));
-        rawData = rawData.data
-        console.log("called")
+      async function getData() {
+        try {
+        const response = await fetch(path, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Unable to load chart data (${response.status})`);
+        let rawData = Papa.parse(await response.text(), { skipEmptyLines: true }).data;
         //  Split label and data
         let labels = []
         let cols = []
@@ -93,14 +69,10 @@ export default function LinePlot(dataPath) {
             }
             groupData.push(tempGroup)
         }
-        console.log("cols", cols)
-        console.log("groupData", groupData)
-        console.log("labels", labels)
-
         const data = {
             labels,
             datasets: cols.map((val,i) => {
-                let color = getSimilarColor("#A88A53")
+                const color = CHART_COLORS[i % CHART_COLORS.length]
                 return {
                     label: cols[i],
                     data: groupData[i],
@@ -111,26 +83,20 @@ export default function LinePlot(dataPath) {
                 }
             })
         };      
-        setData(data)   
-    }
-    
-    async function fetchCsv(path) {
-        const response = await fetch(path);
-        const reader = response.body.getReader();
-        const result = await reader.read();
-        const decoder = new TextDecoder('utf-8');
-        const csv = await decoder.decode(result.value);
-        // console.log('csv', csv);
-        return csv;
-    }    
-    useEffect(() => {
-        getData(path)
-    }, [])
-    
-    console.log(data)
-    // return <Bar options={options} data={data} /> 
+        setData(data)
+        setError("")
+        } catch (fetchError) {
+          if (fetchError.name !== "AbortError") setError(fetchError.message);
+        }
+      }
+
+      getData();
+      return () => controller.abort();
+    }, [path])
+
+    if (error) return <p role="alert">{error}</p>;
     
     return (
-        data.length == 0 ? <div></div> : <Line options={options} data={data} /> 
+        data.length == 0 ? <p role="status">Loading chart…</p> : <Line options={options} data={data} />
     )
 }

@@ -1,100 +1,9 @@
 
 import Header from "../components/header/header"
 import Footer from "../components/footer/footer"
-import Button from "../components/buttons/buttons"
-import Head from "next/head"
+import PageHeader from "../components/page-header/page-header"
 import Link from "next/link"
-import StackedBarChart from "../components/charts/StackedBarChart";
-
-
-
 import styles from "./styles/get-involved.module.scss"
-
-import {
-  Chart as ChartJS,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import faker from "faker";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
-
-export const options = {
-  responsive: true,
-  interaction: {
-    mode: "index",
-    intersect: false,
-  },
-  stacked: false,
-  plugins: {
-    title: {
-      display: false,
-      text: "Chart.js Line Chart - Multi Axis",
-    },
-
-  },
-  scales: {
-    y: {
-      type: "linear",
-      display: true,
-      position: "left",
-    },
-    y1: {
-      type: "linear",
-      display: true,
-      position: "right",
-      grid: {
-        drawOnChartArea: false,
-      },
-    },
-  },
-};
-
-export const optionsPie = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'right',
-    },
-
-  },
-};
-const labels = ["January", "February", "March", "April", "May", "June", "July"];
-
-export const data = {
-  labels,
-  datasets: [
-    {
-      label: "Requests",
-      data: labels.map(() => faker.datatype.number({ min: -1000, max: 1000 })),
-      borderColor: "000000",
-      backgroundColor: "#000000",
-      yAxisID: "y",
-    },
-    {
-      label: "Inspections",
-      data: labels.map(() => faker.datatype.number({ min: -1000, max: 1000 })),
-      borderColor: "#C4C3B8",
-      backgroundColor: "#C4C3B8",
-      yAxisID: "y1",
-    },
-  ],
-};
 
 export default function CTA() {
   return (
@@ -102,35 +11,13 @@ export default function CTA() {
       <Header pageTitle="Get Involved"/>
 
       <main className={styles.main}>
-        <section className={styles.rowInfo}>
-          <div className={styles.columnTitle}>
-            <h1 className={styles.title}>Get Involved</h1>
-          </div>
-          
-          <div className={styles.columnInfo}>
-            <div className={styles.navigation}>
-              <nav>
-                <Button href={"/"}>Home</Button>
-                <Button href={"/intro"}>About</Button>
-                <Button href={"/metrics"}>Metrics</Button>
-                <Button href={"/deepdive"}>Deepdive</Button>
-              </nav>
-              <Button href={"/get-involved"}>Get Involved</Button>
-            </div>
-            <p className={styles.paragraph}>
-              Collaboration between cornell tech and NYCDPR
-              focused on visualization, communication, and contextualization of public data to
-              bring new yorkers insight into how forestry service requests
-              are addressed by the new york city department of parks and recreaction.
-            </p>
-          </div>
-        </section>
+        <PageHeader title="Get Involved" showDescription />
         <div>
           <h2 className={styles.header_sub}>&#127807; Action</h2>
 
           <div className={styles.rowData}>
             <div className={styles.grid}>
-              <Link href="https://www.nycgovparks.org/services/forestry/request/submit" target="_blank">
+              <Link href="https://www.nycgovparks.org/services/forestry/request/submit" target="_blank" rel="noopener noreferrer">
                 <div className={styles.card}>
                   <h2 className={styles.header_card}>Submit a Tree Service Request &rarr;</h2>
                   <p>
@@ -163,7 +50,7 @@ export default function CTA() {
           <h2 className={styles.header_sub}></h2>
           <div className={styles.rowInfo}>
             <div className={styles.grid}>
-              <Link href="https://portal.311.nyc.gov/article/?kanumber=KA-01895" target="_blank">
+              <Link href="https://portal.311.nyc.gov/article/?kanumber=KA-01895" target="_blank" rel="noopener noreferrer">
                 <div className={styles.card}>
                   <h2>Request a Tree &rarr;</h2>
                   <p>
@@ -200,7 +87,7 @@ export default function CTA() {
                 <div className={styles.card}>
                   <h2>How to Report Damaged or Fallen Trees &rarr;</h2>
                 <p>
-                  Report damanged and fallen trees immediately if a tree branch or limb is cracked, will fall, or has fallen down; a tree trunk has split; a tree is leaning, uprooted, or has fallen down; a tree is alive, but is in poor or declining condition.
+                  Report damaged and fallen trees immediately if a tree branch or limb is cracked, will fall, or has fallen down; a tree trunk has split; a tree is leaning, uprooted, or has fallen down; a tree is alive, but is in poor or declining condition.
                 </p>
                 </div>
               </Link>

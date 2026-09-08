@@ -31,7 +31,19 @@ export const sr_to_insp_or_wo = {
 };
 
 export const sr_by_source = {
-  labels: ["January", "February", "March", "April", "May", "June", "July"],
+  labels: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+  ],
   datasets: [
     {
       label: "311 Call Center",
@@ -58,12 +70,21 @@ export const sr_by_source = {
 };
 
 export const pending_wo_by_type = {
-  labels: ["January", "February", "March", "April", "May", "June", "July", "August"],
+  labels: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+  ],
   datasets: [
     {
       label: "Limb Down / Hanging",
       data: [
-        2, 5, 20, 15, 4, 4, 18,13,9
+        2, 5, 20, 15, 4, 4, 18, 13
       ],
       // backgroundColor: "#9A6600",
     },

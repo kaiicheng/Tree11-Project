@@ -5,14 +5,13 @@ export default function Header({ pageTitle }) {
   return (
     <>
       <Head>
-        {/* <title>{pageTitle} | 311 Dashboard</title> */}
+        <title>{pageTitle === "Home" ? "NYC Tree11" : `${pageTitle} | NYC Tree11`}</title>
         <meta
           name="description"
           content="Data Collaboration between 311, NYC Parks Department and Cornell Tech"
         />
         <link rel="icon" href="/favicon.png" />
       </Head>
-      <nav></nav>
     </>
   )
 }

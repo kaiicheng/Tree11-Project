@@ -1,33 +1,59 @@
 import pandas as pd
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import Point
-from datetime import date
-from geojson import Point, Feature, FeatureCollection, dump
+from shapely.geometry import Point as ShapelyPoint
+from datetime import date, datetime, timezone
+from geojson import dump
 import requests
 import json
 import math 
 import sys
-import merge
 import numpy
 import os
+import tempfile
+from pathlib import Path
+from urllib.parse import quote
 
-f = open('./last_fetch_date.txt', 'w+')
-last_fetch_time = f.read()
+BASE_DIR = Path(__file__).resolve().parent
+CHECKPOINT = BASE_DIR / 'last_fetch_date.txt'
+OUTPUT_DIR = BASE_DIR
+
+if CHECKPOINT.exists():
+    last_fetch_time = CHECKPOINT.read_text(encoding='utf-8').strip()
+else:
+    # First run: use a conservative, explicit watermark rather than an empty query.
+    last_fetch_time = "'2023-02-01T12:00:00.000'"
+
+if not last_fetch_time:
+    raise RuntimeError(f'Checkpoint {CHECKPOINT} is empty; refusing an unbounded fetch')
 # last_fetch_time = "'2023-02-01T12:00:00.000'"
 
-def get_data(url):
-    api = requests.get(url)
-    print('Complete Fetch', url, " ", api.status_code)
-    data = api.text
-    js = json.loads(data)
-    return pd.DataFrame.from_dict(js)
+def get_data(dataset_id, where, columns, limit=50000):
+    """Fetch a Socrata dataset completely, in stable pages."""
+    endpoint = f'https://data.cityofnewyork.us/resource/{dataset_id}.json'
+    rows = []
+    offset = 0
+    while True:
+        response = requests.get(endpoint, params={
+            '$where': where,
+            '$select': ','.join(columns),
+            '$order': 'createddate ASC, globalid ASC',
+            '$limit': limit,
+            '$offset': offset,
+        }, timeout=120)
+        response.raise_for_status()
+        page = response.json()
+        if not page:
+            break
+        rows.extend(page)
+        print('Fetched', dataset_id, len(page), 'rows at offset', offset)
+        if len(page) < limit:
+            break
+        offset += limit
+    return pd.DataFrame.from_records(rows, columns=columns)
 
 #fetch data 
-FSR = get_data("https://data.cityofnewyork.us/resource/mu46-p9is.json?$where=createddate>" + last_fetch_time + "&$limit=1000")
-FI = get_data("https://data.cityofnewyork.us/resource/4pt5-3vv4.json?$where=createddate>" + last_fetch_time + "&$limit=1000")
-FWO = get_data("https://data.cityofnewyork.us/resource/bdjm-n7q4.json?$where=createddate>"+ last_fetch_time + "&$limit=1000")
-FRA = get_data("https://data.cityofnewyork.us/resource/259a-b6s7.json?$where=createddate>" + last_fetch_time + "&$limit=1000")
+where = f'createddate > {last_fetch_time}'
 
 #Only keep subset of data
 FSR_columns = ['srcategory', 'srtype', 'srpriority',
@@ -50,6 +76,11 @@ FWO_columns = ['wotype', 'wostatus', 'wopriority', 'boroughcode',
 FRA_columns = ['objectid', 'radefect', 'radefectlocation', 'failure', 'impacttarget',
        'consequence', 'riskrating', 'inspectionglobalid', 'globalid',
        'createddate', 'failureimpact', 'workorderglobalid']
+
+FSR = get_data('mu46-p9is', where, FSR_columns)
+FI = get_data('4pt5-3vv4', where, FI_columns)
+FWO = get_data('bdjm-n7q4', where, FWO_columns)
+FRA = get_data('259a-b6s7', where, FRA_columns)
 
 ## Deal with empty returns
 # If there's no new service requests, stop the processing
@@ -84,7 +115,7 @@ FSR.longitude.isna().sum(), FSR.latitude.isna().sum()
 
 # find census tract
 # not further process inspection dataset because only one inspection is needed for under-reporting measuring, but more inspections could still be used for other purposes
-geometry = [None if math.isnan(xy[0]) or math.isnan(xy[1]) else Point(xy) for xy in zip(FSR.longitude, FSR.latitude)]
+geometry = [None if math.isnan(xy[0]) or math.isnan(xy[1]) else ShapelyPoint(xy) for xy in zip(FSR.longitude, FSR.latitude)]
 gdf = gpd.GeoDataFrame(FSR, crs=4326, geometry=geometry)
 
 FSR.rename(columns={'globalid': 'SRGlobalID', 'closeddate': 'SRClosedDate', 'createddate': 'SRCreatedDate', 'updateddate': 'SRUpdatedDate'}, inplace=True)
@@ -96,7 +127,7 @@ FRA.rename(columns={'globalid': 'RAGlobalID', 'closeddate': 'RAClosedDate', 'cre
 FI = FI[FI['location'].notna()]
 FI["longitude"] = FI.location.copy().apply(lambda x: float(x['coordinates'][0])).copy()
 FI["latitude"] = FI.location.copy().apply(lambda x: float(x['coordinates'][1])).copy()
-geometry = [None if math.isnan(xy[0]) or math.isnan(xy[1]) else Point(xy) for xy in zip(FI.longitude, FI.latitude)]
+geometry = [None if math.isnan(xy[0]) or math.isnan(xy[1]) else ShapelyPoint(xy) for xy in zip(FI.longitude, FI.latitude)]
 g_FI = gpd.GeoDataFrame(FI, crs=4326, geometry=geometry)
 # back to regular df
 merge_FI = pd.DataFrame(g_FI)
@@ -108,7 +139,7 @@ mergeddf['InsGlobalID'].fillna('0', inplace=True)
 FWO["longitude"] = FWO.location.copy().apply(lambda x: float(x['coordinates'][0])).copy()
 FWO["latitude"] = FWO.location.copy().apply(lambda x: float(x['coordinates'][1])).copy()
 
-geometry = [None if math.isnan(xy[0]) or math.isnan(xy[1]) else Point(xy) for xy in zip(FWO.longitude, FWO.latitude)]
+geometry = [None if math.isnan(xy[0]) or math.isnan(xy[1]) else ShapelyPoint(xy) for xy in zip(FWO.longitude, FWO.latitude)]
 g_FWO = gpd.GeoDataFrame(FWO, crs=4326, geometry=geometry)
 
 # back to regular df
@@ -170,15 +201,19 @@ mergeddf.fillna('N/A', inplace = True)
 ## Export as geojson
 geojson = df_to_geojson(mergeddf, cols_to_keep, lat='latitude_SR', lon='longitude_SR')
 
-fileName = "{}{}".format(last_fetch_time, ".geojson")
-with open(fileName, 'w') as outfile:
+file_name = OUTPUT_DIR / f"{last_fetch_time.strip(chr(39)).replace(':', '-')}.geojson"
+with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=OUTPUT_DIR,
+                                 delete=False, suffix='.tmp') as outfile:
     dump(geojson, outfile)
+    temporary_output = Path(outfile.name)
+temporary_output.replace(file_name)
 
-#call merge script to merge geojsons
-merge
+# Merge only timestamped ingestion files; merge.py explicitly excludes its output.
+from merge import merge_geojson_files
+merge_geojson_files(OUTPUT_DIR)
 
-#update last fetch time
-date_today = date.today()
-next_fetch_time = date_today.strftime("'%Y-%m-%dT12:00:00.000'")
-f.write(next_fetch_time)
-f.close()
+# Advance the checkpoint only after output generation and merge succeed.
+next_fetch_time = datetime.now(timezone.utc).strftime("'%Y-%m-%dT%H:%M:%S.000'")
+checkpoint_tmp = CHECKPOINT.with_suffix('.tmp')
+checkpoint_tmp.write_text(next_fetch_time, encoding='utf-8')
+checkpoint_tmp.replace(CHECKPOINT)

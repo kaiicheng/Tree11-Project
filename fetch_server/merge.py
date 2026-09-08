@@ -1,20 +1,25 @@
-import os
+"""Merge timestamped ingestion GeoJSON files without ingesting the output."""
 import glob
+import os
+from pathlib import Path
 import geojson
 
-json_dir_name = "./"
-json_pattern = os.path.join(json_dir_name,'*.geojson')
-file_list = glob.glob(json_pattern)
+def merge_geojson_files(directory="."):
+    directory = Path(directory).resolve()
+    output = directory / "tree11_collection.geojson"
+    files = [Path(path) for path in glob.glob(str(directory / "*.geojson"))
+             if Path(path).resolve() != output]
+    files.sort()
+    result = {"features": [], "type": "FeatureCollection"}
+    for path in files:
+        with path.open(encoding="utf-8") as source:
+            dataset = geojson.load(source)
+        result["features"].extend(dataset.features)
+    temporary = output.with_suffix(output.suffix + ".tmp")
+    with temporary.open("w", encoding="utf-8") as target:
+        geojson.dump(result, target)
+    os.replace(temporary, output)
+    return output
 
-geojson_fmt = {'features':[], 'type':'FeatureCollection'}
-
-
-for file in file_list:
-    with open(file) as f:
-        datasets = geojson.load(f)
-        for feature in datasets.features:
-            geojson_fmt['features'].append(feature)
-
-with open('tree11_collection.geojson', 'w') as f:
-    geojson.dump(geojson_fmt, f)
-# print("merge is called")
+if __name__ == "__main__":
+    merge_geojson_files()
