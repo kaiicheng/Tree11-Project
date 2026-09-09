@@ -50,8 +50,10 @@ def main(argv=None):
         metadata["data_mode"] = "fixture"
         provenance.write_text(json.dumps({"data_mode": "fixture"}))
         metadata["sources"] = {name:{"rows":len(rows),"duration_seconds":0,"status":"success"} for name, rows in tables.items()}
-    elif a.command in ("fetch",) or a.full:
-        tables, metadata["sources"] = fetch_all(settings, return_metadata=True)
+    elif a.command in ("fetch",) or a.full or (a.command == "build" and
+            (not settings.canonical_dir.exists() or
+             (provenance.exists() and json.loads(provenance.read_text()).get("data_mode") == "live"))):
+        tables, metadata["sources"] = fetch_all(settings, return_metadata=True, full=a.full)
         metadata["data_mode"] = "live"
         provenance.write_text(json.dumps({"data_mode": "live"}))
     else:
