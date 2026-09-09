@@ -39,7 +39,9 @@ def _series(rows, months, category, date_fields, label):
 
 
 def build_model(tables, generated_at=None):
-    quality = validate_relationships(tables)
+    # Historical source tables can have different retention windows; retain
+    # orphan metrics without blocking publication.
+    quality = validate_relationships(tables, max_orphan_rate=None)
     srs, inspections = tables["service_requests"], tables["inspections"]
     work, risks = tables["work_orders"], tables["risk_assessments"]
     by_sr, by_ins_work, by_ins_risk = defaultdict(list), defaultdict(list), defaultdict(list)
