@@ -55,9 +55,11 @@ DATASETS = {name: source.dataset_id for name, source in SOURCES.items()}
 ORDER_FIELDS = {name: source.order for name, source in SOURCES.items()}
 REQUIRED = {
     "service_requests": ("globalid", "createddate"),
-    "inspections": ("globalid", "servicerequestglobalid"),
-    "work_orders": ("globalid", "inspectionglobalid"),
-    "risk_assessments": ("globalid", "inspectionglobalid"),
+    # Relationship fields may be null in the source; relationship quality
+    # validation reports those rows separately instead of rejecting ingestion.
+    "inspections": ("globalid",),
+    "work_orders": ("globalid",),
+    "risk_assessments": ("globalid",),
 }
 
 
