@@ -28,6 +28,7 @@ class SourceConfig:
     cursor_fields: tuple[str, ...] = ()
     incremental: bool = False
     lookback_days: int | None = None
+    incremental_field: str | None = None
     primary_key: str = "globalid"
 
     def __post_init__(self):
@@ -46,10 +47,10 @@ class SourceConfig:
 SOURCES = {
     # Socrata exposes updateddate as text for this dataset, so it cannot be
     # used safely in a SoQL date comparison for incremental filtering.
-    "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("updateddate", "globalid"), False),
+    "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("updateddate", "globalid"), True, incremental_field="createddate"),
     "inspections": SourceConfig("4pt5-3vv4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
     "work_orders": SourceConfig("bdjm-n7q4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
-    "risk_assessments": SourceConfig("259a-b6s7", ("createddate", "globalid")),
+    "risk_assessments": SourceConfig("259a-b6s7", ("createddate", "globalid"), incremental=True, incremental_field="createddate"),
 }
 DATASETS = {name: source.dataset_id for name, source in SOURCES.items()}
 ORDER_FIELDS = {name: source.order for name, source in SOURCES.items()}

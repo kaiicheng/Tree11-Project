@@ -35,7 +35,7 @@ def validate_relationships(tables, max_orphan_rate=0.25):
         orphaned = sum(str(row.get(key)) not in valid_ids for row in rows)
         rate = orphaned / len(rows) if rows else 0
         results[name] = {"orphans": orphaned, "orphan_rate": rate}
-        if rate > max_orphan_rate:
+        if max_orphan_rate is not None and rate > max_orphan_rate:
             raise ValidationError(f"{name} orphan rate {rate:.1%} exceeds {max_orphan_rate:.1%}")
     return results
 

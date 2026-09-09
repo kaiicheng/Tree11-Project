@@ -23,11 +23,12 @@ def write_canonical(rows, name, destination):
 def _incremental_where(source, previous, lookback_days):
     if not previous or not source.incremental:
         return None
-    values = [r.get(source.order_fields[0]) for r in previous if r.get(source.order_fields[0])]
+    field = source.incremental_field or source.order_fields[0]
+    values = [r.get(field) for r in previous if r.get(field)]
     if not values: return None
     try:
         cutoff = datetime.fromisoformat(max(values).replace("Z", "+00:00")) - timedelta(days=lookback_days)
-        return f"{source.order_fields[0]} >= '{cutoff.isoformat()}'"
+        return f"{field} >= '{cutoff.isoformat()}'"
     except ValueError:
         return None
 
