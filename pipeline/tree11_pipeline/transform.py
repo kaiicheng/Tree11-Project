@@ -46,9 +46,17 @@ def build_model(tables, generated_at=None):
     work, risks = tables["work_orders"], tables["risk_assessments"]
     by_sr, by_ins_work, by_ins_risk = defaultdict(list), defaultdict(list), defaultdict(list)
     inspection_by_id = {str(row["globalid"]): row for row in inspections}
-    for row in inspections: by_sr[str(row["servicerequestglobalid"])].append(row)
-    for row in work: by_ins_work[str(row["inspectionglobalid"])].append(row)
-    for row in risks: by_ins_risk[str(row["inspectionglobalid"])].append(row)
+    # Source relationship fields are nullable; retain those rows for counts
+    # and quality metrics but do not attach them to a fabricated parent.
+    for row in inspections:
+        if row.get("servicerequestglobalid"):
+            by_sr[str(row["servicerequestglobalid"])].append(row)
+    for row in work:
+        if row.get("inspectionglobalid"):
+            by_ins_work[str(row["inspectionglobalid"])].append(row)
+    for row in risks:
+        if row.get("inspectionglobalid"):
+            by_ins_risk[str(row["inspectionglobalid"])].append(row)
 
     features = []
     for sr in sorted(srs, key=lambda row: str(row["globalid"])):
