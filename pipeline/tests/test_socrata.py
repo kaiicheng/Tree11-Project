@@ -112,6 +112,29 @@ def test_duplicate_order_value_uses_unique_tie_breaker():
     assert len(list(SocrataClient(session=session, log=None).rows("abc", limit=2))) == 2
 
 
+def test_keyset_pagination_advances_cursor_and_escapes_values():
+    class Keyset:
+        def __init__(self): self.calls = []
+        def get(self, url, **kwargs):
+            self.calls.append(kwargs["params"].copy())
+            return Response([[row(0, "2026-01-01T00:00:00.000")],
+                              [row(1, "2026-01-01T00:00:00.000")], []][len(self.calls)-1])
+    session = Keyset()
+    result = list(SocrataClient(session=session, log=None).rows("abc", limit=1,
+        pagination_strategy="keyset"))
+    assert [r["globalid"] for r in result] == ["id-00000", "id-00001"]
+    assert "$offset" not in session.calls[0]
+    assert "globalid > 'id-00000'" in session.calls[1]["$where"]
+
+
+def test_keyset_rejects_no_cursor_progress():
+    class Same:
+        def get(self, url, **kwargs): return Response([row(0)])
+    with pytest.raises(SocrataError, match="repeated page|cursor"):
+        list(SocrataClient(session=Same(), log=None).rows("abc", limit=1,
+            pagination_strategy="keyset"))
+
+
 def test_ordering_regression_is_rejected():
     session = OffsetSession([row(1), row(0)])
     with pytest.raises(SocrataError, match="ordering regression"):

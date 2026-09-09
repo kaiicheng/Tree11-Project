@@ -2,6 +2,7 @@ import json
 import shutil
 import tempfile
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from .config import DATASETS, REQUIRED, SOURCES
 from .socrata import SocrataClient
@@ -19,8 +20,19 @@ def write_canonical(rows, name, destination):
     except ImportError: pass
     return rows
 
-def fetch_all(settings, return_metadata=False):
-    client = SocrataClient(settings.app_token, settings.timeout, settings.retries, settings.max_dataset_seconds, settings.max_source_rows)
+def _incremental_where(source, previous, lookback_days):
+    if not previous or not source.incremental:
+        return None
+    values = [r.get(source.order_fields[0]) for r in previous if r.get(source.order_fields[0])]
+    if not values: return None
+    try:
+        cutoff = datetime.fromisoformat(max(values).replace("Z", "+00:00")) - timedelta(days=lookback_days)
+        return f"{source.order_fields[0]} >= '{cutoff.isoformat()}'"
+    except ValueError:
+        return None
+
+def fetch_all(settings, return_metadata=False, full=False):
+    client = SocrataClient(settings.app_token, settings.timeout, settings.retries, settings.max_dataset_seconds, settings.max_source_rows, connect_timeout=settings.connect_timeout)
     result, sources = {}, {}
     settings.canonical_dir.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix="canonical-build-", dir=settings.canonical_dir.parent))
@@ -29,9 +41,22 @@ def fetch_all(settings, return_metadata=False):
         source = SOURCES[name]
         started = time.monotonic()
         try:
-            rows = list(client.rows(dataset_id, order=source.order, page_size=source.page_size,
-                                    where=f"createddate >= '{settings.analysis_start}'",
-                                    dataset_name=name, primary_key=source.primary_key))
+            try:
+                prior_rows = read_canonical(settings.canonical_dir).get(name, []) if settings.canonical_dir.exists() and not full else []
+            except (OSError, json.JSONDecodeError):
+                prior_rows = []
+            incremental_where = _incremental_where(source, prior_rows, source.lookback_days or settings.lookback_days)
+            where = incremental_where or f"createddate >= '{settings.analysis_start}'"
+            fetched = list(client.rows(dataset_id, order=source.order, page_size=source.page_size,
+                                    where=where,
+                                    dataset_name=name, primary_key=source.primary_key,
+                                    pagination_strategy=source.pagination_strategy))
+            if prior_rows and source.incremental and incremental_where:
+                by_id = {str(r[source.primary_key]): r for r in prior_rows}
+                by_id.update({str(r[source.primary_key]): r for r in fetched})
+                rows = list(by_id.values())
+            else:
+                rows = fetched
             result[name] = write_canonical(rows, name, staging)
             sources[name] = {**client.last_stats, "rows": len(rows),
                              "duration_seconds": round(time.monotonic()-started, 3), "status": "success"}
@@ -58,10 +83,12 @@ def probe_source(settings, name, max_pages=3, max_rows=30_000):
         raise ValueError(f"unknown source: {name}")
     source = SOURCES[name]
     client = SocrataClient(settings.app_token, settings.timeout, settings.retries,
-                           settings.max_dataset_seconds, settings.max_source_rows)
+                           settings.max_dataset_seconds, settings.max_source_rows,
+                           connect_timeout=settings.connect_timeout)
     rows = list(client.rows(source.dataset_id, order=source.order, page_size=source.page_size,
                             dataset_name=name, primary_key=source.primary_key,
-                            max_pages=max_pages, max_probe_rows=max_rows))
+                            max_pages=max_pages, max_probe_rows=max_rows,
+                            pagination_strategy=source.pagination_strategy))
     return {**client.last_stats, "source": name, "probe": True, "rows": len(rows)}
 
 def read_canonical(directory):

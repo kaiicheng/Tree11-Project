@@ -25,13 +25,18 @@ class SourceConfig:
     order_fields: tuple[str, ...]
     page_size: PageSizeConfig = field(default_factory=PageSizeConfig)
     pagination_strategy: str = "offset"
+    cursor_fields: tuple[str, ...] = ()
+    incremental: bool = False
+    lookback_days: int | None = None
     primary_key: str = "globalid"
 
     def __post_init__(self):
-        if self.pagination_strategy != "offset":
+        if self.pagination_strategy not in ("offset", "keyset"):
             raise ValueError(f"unsupported pagination strategy: {self.pagination_strategy}")
         if len(self.order_fields) < 2 or self.order_fields[-1] != self.primary_key:
             raise ValueError("deterministic ordering requires a primary-key tie-breaker")
+        if self.pagination_strategy == "keyset" and tuple(self.order_fields) != tuple(self.cursor_fields):
+            raise ValueError("keyset cursor fields must match the complete order")
 
     @property
     def order(self):
@@ -39,9 +44,11 @@ class SourceConfig:
 
 
 SOURCES = {
-    "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000)),
-    "inspections": SourceConfig("4pt5-3vv4", ("updateddate", "globalid")),
-    "work_orders": SourceConfig("bdjm-n7q4", ("updateddate", "globalid")),
+    # Socrata exposes updateddate as text for this dataset, so it cannot be
+    # used safely in a SoQL date comparison for incremental filtering.
+    "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("updateddate", "globalid"), False),
+    "inspections": SourceConfig("4pt5-3vv4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
+    "work_orders": SourceConfig("bdjm-n7q4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
     "risk_assessments": SourceConfig("259a-b6s7", ("createddate", "globalid")),
 }
 DATASETS = {name: source.dataset_id for name, source in SOURCES.items()}
@@ -57,8 +64,9 @@ REQUIRED = {
 @dataclass
 class Settings:
     root: Path
-    timeout: int = 30
-    retries: int = 4
+    timeout: int = 75
+    connect_timeout: int = 10
+    retries: int = 6
     max_dataset_seconds: int = 1200
     max_source_rows: int = 2_000_000
     max_map_bytes: int = 5_000_000
@@ -68,6 +76,7 @@ class Settings:
     count_drop_warning: float = 0.10
     count_drop_failure: float = 0.50
     app_token: str | None = field(default_factory=lambda: os.getenv("SOCRATA_APP_TOKEN"))
+    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "1")))
 
     @property
     def canonical_dir(self): return self.root / "data" / "canonical"
