@@ -35,6 +35,8 @@ class SourceConfig:
     def __post_init__(self):
         if self.pagination_strategy not in ("offset", "keyset"):
             raise ValueError(f"unsupported pagination strategy: {self.pagination_strategy}")
+        if self.date_filter_mode not in ("comparison", "month_extract"):
+            raise ValueError(f"unsupported date filter mode: {self.date_filter_mode}")
         if len(self.order_fields) < 2 or self.order_fields[-1] != self.primary_key:
             raise ValueError("deterministic ordering requires a primary-key tie-breaker")
         if self.pagination_strategy == "keyset" and tuple(self.order_fields) != tuple(self.cursor_fields):
@@ -49,9 +51,9 @@ SOURCES = {
     # Socrata exposes updateddate as text for this dataset, so it cannot be
     # used safely in a SoQL date comparison for incremental filtering.
     "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("updateddate", "globalid"), True, incremental_field="createddate", date_filter_mode="month_extract"),
-    "inspections": SourceConfig("4pt5-3vv4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
-    "work_orders": SourceConfig("bdjm-n7q4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
-    "risk_assessments": SourceConfig("259a-b6s7", ("createddate", "globalid"), incremental=True, incremental_field="createddate"),
+    "inspections": SourceConfig("4pt5-3vv4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True, incremental_field="createddate", date_filter_mode="month_extract"),
+    "work_orders": SourceConfig("bdjm-n7q4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True, incremental_field="createddate", date_filter_mode="month_extract"),
+    "risk_assessments": SourceConfig("259a-b6s7", ("createddate", "globalid"), incremental=True, incremental_field="createddate", date_filter_mode="month_extract"),
 }
 DATASETS = {name: source.dataset_id for name, source in SOURCES.items()}
 ORDER_FIELDS = {name: source.order for name, source in SOURCES.items()}

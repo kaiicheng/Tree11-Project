@@ -22,9 +22,15 @@ class Response:
 
 
 def test_text_timestamp_source_uses_socrata_month_extraction_filter():
-    where = _where_since(SOURCES["service_requests"], "createddate", datetime(2026, 8, 1, tzinfo=timezone.utc))
-    assert "date_extract_y(createddate) = 2026" in where
-    assert "date_extract_m(createddate) = 8" in where
+    for name in ("service_requests", "inspections", "work_orders", "risk_assessments"):
+        where = _where_since(SOURCES[name], "createddate", datetime(2026, 8, 1, tzinfo=timezone.utc))
+        assert "date_extract_y(createddate) = 2026" in where
+        assert "date_extract_m(createddate) = 8" in where
+
+
+def test_source_config_rejects_unknown_date_filter_mode():
+    with pytest.raises(ValueError, match="date filter"):
+        SourceConfig("abc", ("updateddate", "globalid"), date_filter_mode="invalid")
 
 
 class OffsetSession:
