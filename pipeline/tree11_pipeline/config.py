@@ -29,6 +29,7 @@ class SourceConfig:
     incremental: bool = False
     lookback_days: int | None = None
     incremental_field: str | None = None
+    date_filter_mode: str = "comparison"
     primary_key: str = "globalid"
 
     def __post_init__(self):
@@ -47,7 +48,7 @@ class SourceConfig:
 SOURCES = {
     # Socrata exposes updateddate as text for this dataset, so it cannot be
     # used safely in a SoQL date comparison for incremental filtering.
-    "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("updateddate", "globalid"), True, incremental_field="createddate"),
+    "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("updateddate", "globalid"), True, incremental_field="createddate", date_filter_mode="month_extract"),
     "inspections": SourceConfig("4pt5-3vv4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
     "work_orders": SourceConfig("bdjm-n7q4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True),
     "risk_assessments": SourceConfig("259a-b6s7", ("createddate", "globalid"), incremental=True, incremental_field="createddate"),

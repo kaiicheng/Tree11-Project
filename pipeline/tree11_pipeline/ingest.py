@@ -20,6 +20,17 @@ def write_canonical(rows, name, destination):
     except ImportError: pass
     return rows
 
+def _where_since(source, field, cutoff):
+    if source.date_filter_mode != "month_extract":
+        return f"{field} >= '{cutoff.isoformat()}'"
+    months = []
+    current = cutoff.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    end = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    while current <= end:
+        months.append(f"(date_extract_y({field}) = {current.year} AND date_extract_m({field}) = {current.month})")
+        current = current.replace(year=current.year + 1, month=1) if current.month == 12 else current.replace(month=current.month + 1)
+    return "(" + " OR ".join(months) + ")"
+
 def _incremental_where(source, previous, lookback_days):
     if not previous or not source.incremental:
         return None
@@ -28,13 +39,13 @@ def _incremental_where(source, previous, lookback_days):
     if not values: return None
     try:
         cutoff = datetime.fromisoformat(max(values).replace("Z", "+00:00")) - timedelta(days=lookback_days)
-        return f"{field} >= '{cutoff.isoformat()}'"
+        return _where_since(source, field, cutoff)
     except ValueError:
         return None
 
-def _rolling_where(lookback_days):
+def _rolling_where(source, lookback_days):
     cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
-    return f"createddate >= '{cutoff.isoformat()}'"
+    return _where_since(source, source.incremental_field or "createddate", cutoff)
 
 def fetch_all(settings, return_metadata=False, full=False):
     client = SocrataClient(settings.app_token, settings.timeout, settings.retries, settings.max_dataset_seconds, settings.max_source_rows, connect_timeout=settings.connect_timeout)
@@ -51,7 +62,8 @@ def fetch_all(settings, return_metadata=False, full=False):
             except (OSError, json.JSONDecodeError):
                 prior_rows = []
             incremental_where = _incremental_where(source, prior_rows, source.lookback_days or settings.lookback_days)
-            where = incremental_where or (f"createddate >= '{settings.analysis_start}'" if full else _rolling_where(settings.lookback_days))
+            full_cutoff = datetime.fromisoformat(settings.analysis_start.replace("Z", "+00:00"))
+            where = incremental_where or (_where_since(source, source.incremental_field or "createddate", full_cutoff) if full else _rolling_where(source, settings.lookback_days))
             fetched = list(client.rows(dataset_id, order=source.order, page_size=source.page_size,
                                     where=where,
                                     dataset_name=name, primary_key=source.primary_key,
