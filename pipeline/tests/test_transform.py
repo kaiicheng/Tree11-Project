@@ -14,6 +14,14 @@ def test_chart_series_match_labels():
     for chart in build_model(tables())["charts"].values():
         assert all(len(s["data"]) == len(chart["labels"]) for s in chart["datasets"])
 
+def test_reporting_uses_completed_months_and_bounds_map():
+    source = tables()
+    source["service_requests"].append({"globalid":"sr-current","createddate":"2026-09-01T00:00:00+00:00","latitude":"40.7","longitude":"-74"})
+    model = build_model(source, "2026-09-10T00:00:00+00:00")
+    assert model["summary"]["reporting_period"] == {"start_month":"2026-08","end_month":"2026-08","complete_months_only":True}
+    assert "2026-09" not in model["charts"]["operational_volume_monthly"]["labels"]
+    assert model["summary"]["map_feature_count"] <= model["summary"]["map_feature_limit"]
+
 def test_live_source_field_names_and_pending_work_order_asset():
     source = tables()
     source["service_requests"][0].update({"srsource": "TreesCount!", "srstatus": "Open", "boroughcode": "Queens"})

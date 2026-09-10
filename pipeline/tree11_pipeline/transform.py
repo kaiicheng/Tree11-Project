@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from .validate import validate_relationships
 
+MAP_FEATURE_LIMIT = 2_000
 
 def pick(row, *names):
     for name in names:
@@ -44,6 +45,10 @@ def build_model(tables, generated_at=None):
     quality = validate_relationships(tables, max_orphan_rate=None)
     srs, inspections = tables["service_requests"], tables["inspections"]
     work, risks = tables["work_orders"], tables["risk_assessments"]
+    generated = generated_at or datetime.now(timezone.utc).isoformat()
+    generated_date = date(generated) or datetime.now(timezone.utc)
+    complete_year, complete_month = (generated_date.year - 1, 12) if generated_date.month == 1 else (generated_date.year, generated_date.month - 1)
+    last_complete = f"{complete_year:04d}-{complete_month:02d}"
     by_sr, by_ins_work, by_ins_risk = defaultdict(list), defaultdict(list), defaultdict(list)
     inspection_by_id = {str(row["globalid"]): row for row in inspections}
     # Source relationship fields are nullable; retain those rows for counts
@@ -58,8 +63,15 @@ def build_model(tables, generated_at=None):
         if row.get("inspectionglobalid"):
             by_ins_risk[str(row["inspectionglobalid"])].append(row)
 
+    # The public map is a bounded, deterministic view of the reporting month.
+    map_rows = [row for row in srs if month(row, "createddate") == last_complete]
+    if not map_rows:
+        map_rows = [row for row in srs if (value := month(row, "createddate")) and value <= last_complete]
+    if not map_rows:
+        map_rows = list(srs)
+    map_rows = sorted(map_rows, key=lambda row: str(row["globalid"]))[:MAP_FEATURE_LIMIT]
     features = []
-    for sr in sorted(srs, key=lambda row: str(row["globalid"])):
+    for sr in map_rows:
         coords = coordinates(sr)
         if not coords: continue
         children = by_sr.get(str(sr["globalid"]), [])
@@ -78,7 +90,7 @@ def build_model(tables, generated_at=None):
             "max_risk_rating": max((str(pick(row, "riskrating")) for row in child_risk if pick(row, "riskrating")), default=None),
         }})
 
-    months = sorted({value for rows, fields in ((srs, ("createddate",)), (inspections, ("inspectiondate", "createddate")), (work, ("createddate", "updateddate"))) for row in rows if (value := month(row, *fields))})
+    months = [last_complete]
     source_names = sorted({str(pick(row, "srsource", "source") or "Unknown") for row in srs})
     source_chart = {"labels": months, "datasets": [_series(srs, months, lambda row, name=name: str(pick(row, "srsource", "source") or "Unknown") == name, ("createddate",), name) for name in source_names]}
 
@@ -95,10 +107,6 @@ def build_model(tables, generated_at=None):
         _series(work, months, lambda _: True, ("createddate", "updateddate"), "Work orders"),
     ]}
 
-    generated = generated_at or datetime.now(timezone.utc).isoformat()
-    generated_date = date(generated) or datetime.now(timezone.utc)
-    complete_year, complete_month = (generated_date.year - 1, 12) if generated_date.month == 1 else (generated_date.year, generated_date.month - 1)
-    last_complete = f"{complete_year:04d}-{complete_month:02d}"
     data_through = max((value for rows in tables.values() for row in rows if (value := pick(row, "updateddate", "createddate"))), default=None)
     return {
         "geojson": {"type": "FeatureCollection", "features": features},
@@ -106,6 +114,7 @@ def build_model(tables, generated_at=None):
         "summary": {"generated_at": generated, "data_through": data_through, "last_complete_month": last_complete,
             "last_month_requests": sum(month(row, "createddate") == last_complete for row in srs),
             "uninspected_requests": sum(not by_sr.get(str(row["globalid"])) for row in srs),
-            "inspections_in_period": len(inspections), "map_feature_count": len(features),
-            "excluded_invalid_coordinate_count": len(srs) - len(features), "relationship_quality": quality},
+            "inspections_in_period": sum(month(row, "inspectiondate", "createddate") in months for row in inspections), "map_feature_count": len(features),
+            "map_feature_limit": MAP_FEATURE_LIMIT, "reporting_period": {"start_month": last_complete, "end_month": last_complete, "complete_months_only": True},
+            "excluded_invalid_coordinate_count": sum(not coordinates(row) for row in map_rows), "relationship_quality": quality},
     }
