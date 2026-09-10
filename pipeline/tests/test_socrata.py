@@ -1,8 +1,10 @@
 import json
 import pytest
 import requests
+from datetime import datetime, timezone
 
-from tree11_pipeline.config import PageSizeConfig, SourceConfig
+from tree11_pipeline.config import PageSizeConfig, SourceConfig, SOURCES
+from tree11_pipeline.ingest import _where_since
 from tree11_pipeline.socrata import AdaptivePageSizer, SocrataClient, SocrataError
 
 
@@ -17,6 +19,12 @@ class Response:
     text = ""
     def __init__(self, value): self.value = value
     def json(self): return self.value
+
+
+def test_text_timestamp_source_uses_socrata_month_extraction_filter():
+    where = _where_since(SOURCES["service_requests"], "createddate", datetime(2026, 8, 1, tzinfo=timezone.utc))
+    assert "date_extract_y(createddate) = 2026" in where
+    assert "date_extract_m(createddate) = 8" in where
 
 
 class OffsetSession:
