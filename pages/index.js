@@ -33,9 +33,11 @@ function RefreshDashboard({ summary, manifest, trend }) {
   const mode = refresh.data_mode || "unknown";
   const change = summary.change_counts || {};
   const rows = manifest.source_rows || {};
+  const period = summary.reporting_period || {};
   return <section className={styles.refreshDashboard} aria-label="Dataset refresh status">
     <div><span className={styles.refreshLabel}>Update process</span><strong>{refresh.status === "success" ? "Succeeded" : refresh.status || "Unknown"}</strong><small>Last process completion: {formatUtc(refreshed)}</small><small aria-live="polite">{state}</small></div>
     <div><span className={styles.refreshLabel}>Data coverage (UTC)</span><strong>{formatUtc(manifest.data_through || summary.data_through)}</strong><small>Latest source event date; a successful refresh does not guarantee current or complete coverage.</small></div>
+    <div><span className={styles.refreshLabel}>Reporting period</span><strong>{period.start_month && period.end_month ? `${period.start_month} to ${period.end_month}` : summary.last_complete_month || "Unavailable"}</strong><small>{period.complete_months_only ? "Monthly reporting includes completed months only." : "Reporting-period policy unavailable."}</small></div>
     <div><span className={styles.refreshLabel}>Dataset type</span><strong className={mode !== "live" ? styles.stale : ""}>{mode === "fixture" ? "Test data (fixture)" : mode === "live" ? "Source data" : "Unverified provenance"}</strong><small>{mode === "fixture" ? "Synthetic sample for testing; does not represent NYC totals." : "Coverage and record counts describe this published dataset."}</small></div>
     <div><span className={styles.refreshLabel}>Source records</span><strong>{Object.values(rows).reduce((a, b) => a + b, 0).toLocaleString()}</strong><small>{Object.entries(rows).map(([name, count]) => `${name.replaceAll("_", " ")}: ${count.toLocaleString()}`).join(" · ")}</small></div>
     <div><span className={styles.refreshLabel}>Latest changes</span><strong>+{change.added || 0} / ~{change.changed || 0} / −{change.removed || 0}</strong><small>Added / changed / removed</small></div>
@@ -103,8 +105,8 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
                   <div className={styles.dataVizTop}>
                     <VizTitle color="#fff">Monthly Service Requests by Source</VizTitle>
                     <StackedBarChart stacked={true} data={srBySource} />
-                    <p className={styles.paragraph_long}>Data through {summary.data_through ? formatUtc(summary.data_through) : "the latest source record"}. Last refresh: {formatUtc(summary.refresh?.ended_at)}.</p>
-                    <p className={styles.paragraph_long}><a href="/data/map/points.geojson" download>Download current processed map data (GeoJSON)</a></p>
+                    <p className={styles.paragraph_long}>Source data through {summary.data_through ? formatUtc(summary.data_through) : "the latest source record"}. Charts use completed months through {summary.last_complete_month || "the latest completed month"}. Last refresh: {formatUtc(summary.refresh?.ended_at)}.</p>
+                    <p className={styles.paragraph_long}><a href="/data/map/points.geojson" download>Download processed map data (GeoJSON; up to {summary.map_feature_limit?.toLocaleString() || "5,000"} requests from the reporting month)</a></p>
                   </div>
                 </div></section>
                 

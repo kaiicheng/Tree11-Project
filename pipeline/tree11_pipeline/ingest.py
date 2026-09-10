@@ -2,7 +2,7 @@ import json
 import shutil
 import tempfile
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from .config import DATASETS, REQUIRED, SOURCES
 from .socrata import SocrataClient
@@ -32,6 +32,10 @@ def _incremental_where(source, previous, lookback_days):
     except ValueError:
         return None
 
+def _rolling_where(lookback_days):
+    cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    return f"createddate >= '{cutoff.isoformat()}'"
+
 def fetch_all(settings, return_metadata=False, full=False):
     client = SocrataClient(settings.app_token, settings.timeout, settings.retries, settings.max_dataset_seconds, settings.max_source_rows, connect_timeout=settings.connect_timeout)
     result, sources = {}, {}
@@ -47,7 +51,7 @@ def fetch_all(settings, return_metadata=False, full=False):
             except (OSError, json.JSONDecodeError):
                 prior_rows = []
             incremental_where = _incremental_where(source, prior_rows, source.lookback_days or settings.lookback_days)
-            where = incremental_where or f"createddate >= '{settings.analysis_start}'"
+            where = incremental_where or (f"createddate >= '{settings.analysis_start}'" if full else _rolling_where(settings.lookback_days))
             fetched = list(client.rows(dataset_id, order=source.order, page_size=source.page_size,
                                     where=where,
                                     dataset_name=name, primary_key=source.primary_key,

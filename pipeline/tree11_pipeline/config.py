@@ -79,7 +79,9 @@ class Settings:
     count_drop_warning: float = 0.10
     count_drop_failure: float = 0.50
     app_token: str | None = field(default_factory=lambda: os.getenv("SOCRATA_APP_TOKEN"))
-    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "1")))
+    # GitHub Actions runners are ephemeral, so a rolling source window is the
+    # reliable baseline when no local canonical cache is available.
+    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "60")))
 
     @property
     def canonical_dir(self): return self.root / "data" / "canonical"
