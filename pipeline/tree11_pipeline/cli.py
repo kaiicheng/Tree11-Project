@@ -1,4 +1,4 @@
-import argparse, json, time
+import argparse, json, os, time
 from datetime import datetime, timezone
 from pathlib import Path
 from .config import Settings
@@ -9,7 +9,9 @@ from .validate import validate_assets
 from .lifecycle import replay, relationships, analytics
 from .research.artifacts import build_research, write_research_run
 
-def root(): return Path(__file__).resolve().parents[2]
+def root():
+    """Return the workspace root, with an override for isolated CI builds."""
+    return Path(os.getenv("TREE11_ROOT", Path(__file__).resolve().parents[2]))
 def fixture_tables(settings, snapshot=None):
     raw=Path(__file__).parents[1]/"tests"/"fixtures"/("lifecycle_snapshots.json" if snapshot else "tables.json")
     tables=json.loads(raw.read_text())
