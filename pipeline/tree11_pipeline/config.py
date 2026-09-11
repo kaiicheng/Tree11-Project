@@ -84,7 +84,9 @@ class Settings:
     app_token: str | None = field(default_factory=lambda: os.getenv("SOCRATA_APP_TOKEN"))
     # GitHub Actions runners are ephemeral, so a rolling source window is the
     # reliable baseline when no local canonical cache is available.
-    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "60")))
+    # Retain enough source history for six completed monthly reporting periods,
+    # with a buffer for calendar boundaries and delayed source updates.
+    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "210")))
 
     @property
     def canonical_dir(self): return self.root / "data" / "canonical"
