@@ -45,6 +45,7 @@ jobs:
         run: |
           python -m pip install -e ./pipeline[dev]
           pytest pipeline/tests
+          export TREE11_ROOT="$RUNNER_TEMP/tree11-fixture"
           python -m tree11_pipeline.cli build --fixture
           python -m tree11_pipeline.cli validate-history
           python -m tree11_pipeline.cli validate
