@@ -145,6 +145,7 @@
 
 .dataVizTop {
   background-color: var(--c-black);
+  color: #fff8e8;
   padding: calc(var(--magicNumber) * 1.5) calc(var(--magicNumber) / 2);
   padding-bottom: calc(var(--magicNumber) / 2);
   // margin-bottom: calc(var(--magicNumber) / 2);
@@ -154,6 +155,9 @@
   }
   &:hover .vizTitle h3 {
     opacity: 1;
+  }
+  .paragraph_long {
+    color: #fff8e8;
   }
 }
 
@@ -218,8 +222,10 @@
 .refreshDashboard {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px;
   margin: 0 0 calc(var(--magicNumber) / 2); background: rgba(0,0,0,.2); border-radius: var(--borderRadius); overflow: hidden;
-  > div { background: var(--c-yellow); padding: .8rem 1rem; min-width: 0; }
-  strong, small, .refreshLabel { display: block; } strong { font-size: 1.15rem; margin: .2rem 0; } small { font-size: .7rem; overflow-wrap: anywhere; }
+  > div { background: var(--c-yellow); color: #17130a; padding: .8rem 1rem; min-width: 0; }
+  strong, small, .refreshLabel { display: block; color: inherit; }
+  strong { font-size: 1.15rem; margin: .2rem 0; }
+  small { font-size: .7rem; overflow-wrap: anywhere; }
 }
 .refreshLabel { font-size: .65rem; text-transform: uppercase; letter-spacing: .06em; }
 .stale { color: #a00000; }
@@ -370,7 +376,8 @@
     font-weight: 300;
     margin: 0;
     text-transform: uppercase;
-    opacity: 0.4;
+    color: #fff8e8;
+    opacity: 0.9;
     transition: all 300ms ease-in-out;
   }
 }
