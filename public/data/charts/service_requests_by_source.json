@@ -1,1 +1,1 @@
-{"datasets":[{"data":[2],"label":"311"}],"labels":["2026-01"]}
+{"datasets":[{"data":[5101],"label":"3-1-1 Call Center"},{"data":[271],"label":"AMPS"},{"data":[17],"label":"Correspondence"},{"data":[0],"label":"DOT"},{"data":[7],"label":"DPR"},{"data":[265],"label":"DPR -Public Tree Map"},{"data":[1305],"label":"Department of Parks and Recreation - Public Web Site"},{"data":[1],"label":"Park Inspection Program"}],"labels":["2026-08"]}
