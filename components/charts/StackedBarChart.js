@@ -53,15 +53,30 @@ export const optionsStacked = {
   scales: {
     x: {
       stacked: true,
+      ticks: { color: "#fff8e8" },
+      grid: { color: "rgba(255, 248, 232, 0.16)" },
     },
     y: {
       stacked: true,
+      beginAtZero: true,
+      ticks: { color: "#fff8e8" },
+      grid: { color: "rgba(255, 248, 232, 0.16)" },
     },
   },
 };
 
+const CHART_COLORS = ["#ffe500", "#f6a800", "#ff6b35", "#56cfe1", "#80ed99", "#c77dff", "#ff8fab", "#ffd6a5"];
 
 
 export default function StackedBarChart({stacked, data}) {
-  return <Bar options={stacked ? optionsStacked : options} data={data} />;
+  const chartData = {
+    ...data,
+    datasets: data.datasets.map((dataset, index) => ({
+      ...dataset,
+      backgroundColor: dataset.backgroundColor || CHART_COLORS[index % CHART_COLORS.length],
+      borderColor: dataset.borderColor || "#17130a",
+      borderWidth: dataset.borderWidth ?? 1,
+    })),
+  };
+  return <Bar options={stacked ? optionsStacked : options} data={chartData} />;
 }
