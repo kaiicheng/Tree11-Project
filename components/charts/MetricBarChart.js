@@ -25,9 +25,14 @@ export default function BarPlot({ data: path, title = "Requests, inspections, an
     const [error, setError] = useState("")
     const options = {
         responsive: true,
+        aspectRatio: 2.2,
         plugins: {
-          legend: { position: 'top' },
-          title: { display: true, text: title },
+          legend: { position: 'top', labels: { color: '#17130a', boxWidth: 12, padding: 16 } },
+          title: { display: true, text: title, color: '#17130a', font: { size: 14, weight: '600' }, padding: { bottom: 18 } },
+        },
+        scales: {
+          x: { ticks: { color: '#4d4126' }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { color: '#4d4126' }, grid: { color: 'rgba(77, 65, 38, 0.16)' } },
         },
     };
 
@@ -41,7 +46,7 @@ export default function BarPlot({ data: path, title = "Requests, inspections, an
         if (!path.endsWith(".json")) throw new Error("Chart asset must be generated JSON");
         const jsonData = await response.json();
         setData({ ...jsonData, datasets: jsonData.datasets.map((series, i) => ({
-          ...series, backgroundColor: series.backgroundColor || CHART_COLORS[i % CHART_COLORS.length], yAxisID: "y",
+          ...series, backgroundColor: series.backgroundColor || CHART_COLORS[i % CHART_COLORS.length], borderColor: '#17130a', borderWidth: 1, borderRadius: 3, yAxisID: "y",
         })) });
         setError("")
         } catch (fetchError) {
