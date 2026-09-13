@@ -1,4 +1,5 @@
 node_modules/
+.venv-streaming/
 .next/
 out/
 coverage/
@@ -27,3 +28,6 @@ __pycache__/
 /data/intermediate/
 /data/*.zip
 /pipeline/.test-output/
+.pytest-tmp/
+streaming/latest.json
+streaming/vehicles.geojson

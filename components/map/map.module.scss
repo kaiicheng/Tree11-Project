@@ -146,6 +146,11 @@
   margin-right: 5px;
 }
 
+.filterGroup .mtaFilter {
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+  color: #d9f1ff;
+}
+
 .mapPopup {
   :global(.mapboxgl-popup-content) {
     min-width: 230px;
