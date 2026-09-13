@@ -221,7 +221,7 @@
 }
 .refreshDashboard {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px;
-  margin: 0 0 calc(var(--magicNumber) / 2); background: rgba(0,0,0,.2); border-radius: var(--borderRadius); overflow: hidden;
+  margin: calc(var(--magicNumber) / 2) 0 calc(var(--magicNumber) / 2); background: rgba(0,0,0,.2); border-radius: var(--borderRadius); overflow: hidden;
   > div { background: var(--c-yellow); color: #17130a; padding: .8rem 1rem; min-width: 0; }
   strong, small, .refreshLabel { display: block; color: inherit; }
   strong { font-size: 1.15rem; margin: .2rem 0; }

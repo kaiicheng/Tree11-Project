@@ -4,6 +4,7 @@ import PageHeader from "../components/page-header/page-header";
 import StackedBarChart from "../components/charts/StackedBarChart";
 // import LineChart from "../components/charts/LineChart";
 import Map from "../components/map/map";
+import WeatherContext from "../components/weather/WeatherContext";
 import fs from "fs";
 import path from "path";
 import { useEffect, useState } from "react";
@@ -50,7 +51,7 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
       <Header pageTitle="Home" />
       <main className={styles.main}>
         <PageHeader showDescription />
-        <RefreshDashboard summary={summary} manifest={manifest} trend={trend} />
+        <WeatherContext />
         <section className={styles.dataGrid}>
           <div className={styles.dataVizMap}>
             <Map />
@@ -112,6 +113,7 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
                 
           </div>
         </section>
+        <RefreshDashboard summary={summary} manifest={manifest} trend={trend} />
       </main>
       <Footer />
     </div>
