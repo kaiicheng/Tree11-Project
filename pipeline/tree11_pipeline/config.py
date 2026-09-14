@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 import os
+from datetime import datetime, timedelta, timezone
 
 SOCRATA_DOMAIN = "data.cityofnewyork.us"
 
@@ -76,9 +77,10 @@ class Settings:
     max_dataset_seconds: int = 1200
     max_source_rows: int = 2_000_000
     max_map_bytes: int = 5_000_000
-    lookback_days: int = 30
     snapshot_retention: int = 26
-    analysis_start: str = field(default_factory=lambda: os.getenv("TREE11_ANALYSIS_START", "2022-01-01T00:00:00.000"))
+    # Full builds use the same rolling window as incremental builds unless an
+    # explicit start date is supplied. This keeps CI and local runs bounded.
+    analysis_start: str = field(default_factory=lambda: os.getenv("TREE11_ANALYSIS_START", (datetime.now(timezone.utc) - timedelta(days=180)).isoformat()))
     count_drop_warning: float = 0.10
     count_drop_failure: float = 0.50
     app_token: str | None = field(default_factory=lambda: os.getenv("SOCRATA_APP_TOKEN"))
@@ -86,7 +88,10 @@ class Settings:
     # reliable baseline when no local canonical cache is available.
     # Retain enough source history for six completed monthly reporting periods,
     # with a buffer for calendar boundaries and delayed source updates.
-    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "210")))
+    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "180")))
+    # Public dashboard builds store aggregates, not row-level historical
+    # snapshots. Set this to false only for a dedicated research export.
+    compact_public_history: bool = field(default_factory=lambda: os.getenv("TREE11_COMPACT_PUBLIC_HISTORY", "true").lower() not in {"0", "false", "no"})
 
     @property
     def canonical_dir(self): return self.root / "data" / "canonical"

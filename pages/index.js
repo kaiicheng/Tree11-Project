@@ -5,6 +5,7 @@ import StackedBarChart from "../components/charts/StackedBarChart";
 // import LineChart from "../components/charts/LineChart";
 import Map from "../components/map/map";
 import WeatherContext from "../components/weather/WeatherContext";
+import LiveStreamCard from "../components/streaming/LiveStreamCard";
 import fs from "fs";
 import path from "path";
 import { useEffect, useState } from "react";
@@ -52,6 +53,7 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
       <main className={styles.main}>
         <PageHeader showDescription />
         <WeatherContext />
+        <LiveStreamCard />
         <section className={styles.dataGrid}>
           <div className={styles.dataVizMap}>
             <Map />

@@ -1,1 +1,1 @@
-{"datasets":[{"data":[2,2,9,96807],"label":"Added records"},{"data":[4,4,0,0],"label":"Changed records"},{"data":[5,5,0,9],"label":"Removed records"}],"format_version":2,"labels":["state-48654ed8ff8a7aea","state-ab6fb444429c1751","state-355a2ee2a9e18212","state-ad9b385bc391444c"]}
+{"datasets":[{"data":[4],"label":"Added records"},{"data":[0],"label":"Changed records"},{"data":[0],"label":"Removed records"}],"format_version":2,"labels":["state-e969e215c14cfefd"]}

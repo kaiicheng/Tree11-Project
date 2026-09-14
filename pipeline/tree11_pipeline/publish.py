@@ -2,11 +2,23 @@ import hashlib,json,os,shutil,tempfile
 from datetime import datetime,timezone
 from pathlib import Path
 from .validate import validate_assets,ValidationError
-from .lifecycle import advance,analytics,relationships,replay,STATE_SCHEMA_VERSION,EVENT_SCHEMA_VERSION,LIFECYCLE_SCHEMA_VERSION
+from .lifecycle import advance,analytics,entity_rows,relationships,replay,STATE_SCHEMA_VERSION,EVENT_SCHEMA_VERSION,LIFECYCLE_SCHEMA_VERSION
 from .research.artifacts import build_research
 FORMAT_VERSION=2
 def dump(p,x): p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(x,sort_keys=True,separators=(',',':'),allow_nan=False),encoding='utf8')
-def _state(ds): return {n:{str(r['globalid']):hashlib.sha256(json.dumps(r,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest() for r in rs} for n,rs in sorted(ds.items())}
+def _state(ds, compact=False):
+    if compact:
+        # A single stable digest per source is enough for public refresh
+        # metadata. Keeping every row hash in Git would create hundreds of MB
+        # of history for a dashboard that only reads aggregates.
+        result = {}
+        for name, rows in sorted(ds.items()):
+            digest = hashlib.sha256()
+            for row in sorted(rows, key=lambda value: str(value["globalid"])):
+                digest.update(json.dumps(row, sort_keys=True, separators=(",", ":"), allow_nan=False).encode())
+            result[name] = {"__dataset__": digest.hexdigest()}
+        return result
+    return {n:{str(r['globalid']):hashlib.sha256(json.dumps(r,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest() for r in rs} for n,rs in sorted(ds.items())}
 def _load(p,life=False):
     out=[]; folder=p/'lifecycle'/'snapshots' if life else p/'snapshots'
     for f in sorted(folder.glob('*.json')) if folder.exists() else []:
@@ -16,14 +28,21 @@ def _load(p,life=False):
             out.append(x)
         except (OSError,ValueError,json.JSONDecodeError) as e: raise ValidationError(f'corrupt historical snapshot: {f.name}') from e
     return sorted(out,key=lambda x:(x.get('snapshot_time',x.get('observed_at','')),x['snapshot_id']))
-def publish(model,target,datasets,max_map_bytes,snapshot_retention=26,refresh=None):
+def publish(model,target,datasets,max_map_bytes,snapshot_retention=26,refresh=None,compact_public_history=False):
     target=Path(target);target.parent.mkdir(parents=True,exist_ok=True);tmp=Path(tempfile.mkdtemp(prefix='tree11-build-',dir=target.parent))
     try:
         if target.exists(): shutil.copytree(target,tmp,dirs_exist_ok=True)
         prior=json.loads((target/'manifest.json').read_text()).get('source_rows',{}) if (target/'manifest.json').exists() else {}
         for n,rs in datasets.items():
             if prior.get(n,0) and len(rs)<prior[n]*.5: raise ValidationError(f'{n} row count dropped more than 50%; refusing publication')
-        hist=_load(tmp/'history');state=_state(datasets);sid='state-'+hashlib.sha256(json.dumps(state,sort_keys=True,separators=(',',':')).encode()).hexdigest()[:16]
+        if compact_public_history:
+            # Remove legacy row-level history when converting an existing
+            # dashboard. It remains reproducible from the source APIs, while
+            # Git contains only the assets actually served to visitors.
+            for folder in (tmp/'history'/'snapshots', tmp/'history'/'lifecycle'/'snapshots'):
+                if folder.exists():
+                    for file in folder.glob('*.json'): file.unlink()
+        hist=_load(tmp/'history');state=_state(datasets,compact_public_history);sid='state-'+hashlib.sha256(json.dumps(state,sort_keys=True,separators=(',',':')).encode()).hexdigest()[:16]
         item=next((x for x in hist if x['snapshot_id']==sid),None);old=hist[-1]['state'] if hist else {}
         delta={n:{'added':len(v.keys()-old.get(n,{}).keys()),'removed':len(old.get(n,{}).keys()-v.keys()),'changed':sum(old.get(n,{}).get(k)!=v[k] for k in v.keys()&old.get(n,{}).keys())} for n,v in state.items()}
         if not item:
@@ -31,9 +50,17 @@ def publish(model,target,datasets,max_map_bytes,snapshot_retention=26,refresh=No
         hist=hist[-snapshot_retention:];keep={x['snapshot_id'] for x in hist}
         for f in (tmp/'history'/'snapshots').glob('*.json'):
             if f.stem not in keep:f.unlink()
-        life=_load(tmp/'history',True); ls=next((x for x in life if x['snapshot_id']==sid),None)
-        if not ls: ls=advance(datasets,life,model['summary']['generated_at'],sid);dump(tmp/'history'/'lifecycle'/'snapshots'/(sid+'.json'),ls);life.append(ls)
-        entities=list(replay(life).values());rels=relationships(entities);events={e['event_id']:e for s in life for e in s.get('events',[])};rows,lsummary,transitions,quality=analytics(entities,rels,list(events.values()),model['summary']['generated_at'])
+        if compact_public_history:
+            # Risk assessments are used for current charts but are not part of
+            # service-request timing. Excluding them avoids publishing a huge
+            # relationship graph with no frontend consumer.
+            lifecycle_tables={name: datasets.get(name, []) for name in ('service_requests','inspections','work_orders')}
+            life=[]; entities=entity_rows(lifecycle_tables); rels=relationships(entities); events={}
+        else:
+            life=_load(tmp/'history',True); ls=next((x for x in life if x['snapshot_id']==sid),None)
+            if not ls: ls=advance(datasets,life,model['summary']['generated_at'],sid);dump(tmp/'history'/'lifecycle'/'snapshots'/(sid+'.json'),ls);life.append(ls)
+            entities=list(replay(life).values());rels=relationships(entities);events={e['event_id']:e for s in life for e in s.get('events',[])}
+        rows,lsummary,transitions,quality=analytics(entities,rels,list(events.values()),model['summary']['generated_at'])
         refresh=refresh or {'status':'success','sources':{n:{'rows':len(v),'status':'success'} for n,v in datasets.items()}}; ended=datetime.now(timezone.utc);refresh={**refresh,'status':'success','snapshot_id':sid,'ended_at':ended.isoformat()}
         summary={**model['summary'],'format_version':2,'snapshot_id':sid,'change_counts':item['change_counts'],'validation_status':'valid','refresh':refresh,'lifecycle':lsummary};dump(tmp/'summary.json',summary);dump(tmp/'map'/'points.geojson',model['geojson'])
         for n,c in model['charts'].items():dump(tmp/'charts'/(n+'.json'),c)
@@ -49,7 +76,7 @@ def publish(model,target,datasets,max_map_bytes,snapshot_retention=26,refresh=No
         def stats(x):
             a=sorted(x); return {'eligible_count':len(a),'median':a[len(a)//2] if a else None,'p25':a[round((len(a)-1)*.25)] if a else None,'p75':a[round((len(a)-1)*.75)] if a else None,'p90':a[round((len(a)-1)*.9)] if a else None}
         monthly_rows=[{'month':m,'requests_created':x['requests_created'],'inspection_timing':stats(x['inspection_hours']),'work_order_timing':stats(x['work_order_hours']),'linked_inspection_pct':x['linked_inspection_count']/x['requests_created'],'linked_work_order_pct':x['linked_work_order_count']/x['requests_created']} for m,x in sorted(monthly.items())]
-        dump(tmp/'history'/'lifecycle_summary.json',lsummary);dump(tmp/'history'/'transition_matrix.json',transitions);dump(tmp/'history'/'quality.json',quality);dump(tmp/'history'/'monthly_timing.json',{'schema_version':1,'months':monthly_rows});dump(tmp/'history'/'relationships.json',{'schema_version':1,'relationships':rels})
+        dump(tmp/'history'/'lifecycle_summary.json',lsummary);dump(tmp/'history'/'transition_matrix.json',transitions);dump(tmp/'history'/'quality.json',quality);dump(tmp/'history'/'monthly_timing.json',{'schema_version':1,'months':monthly_rows});dump(tmp/'history'/'relationships.json',{'schema_version':1,'relationship_count':len(rels),'relationships':[] if compact_public_history else rels})
         research=build_research(datasets,rows,model['summary']['generated_at'],life)
         for name, value in research.items():
             if name != 'survival': dump(tmp/'research'/(name+'.json'),value)

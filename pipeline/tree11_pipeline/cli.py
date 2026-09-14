@@ -65,5 +65,5 @@ def main(argv=None):
     metadata.update({"ended_at": datetime.now(timezone.utc).isoformat(), "duration_seconds":round(time.monotonic()-timer,3)})
     if a.command=="fetch": print("canonical source tables refreshed"); return
     observed={"A":"2026-01-01T00:00:00+00:00","B":"2026-01-02T00:00:00+00:00","C":"2026-01-03T00:00:00+00:00","D":"2026-01-04T00:00:00+00:00"}.get(a.fixture_snapshot)
-    publish(build_model(tables,observed) if observed else build_model(tables),settings.public_dir,tables,settings.max_map_bytes,settings.snapshot_retention,metadata); print(f"published {settings.public_dir}")
+    publish(build_model(tables,observed) if observed else build_model(tables),settings.public_dir,tables,settings.max_map_bytes,settings.snapshot_retention,metadata,settings.compact_public_history); print(f"published {settings.public_dir}")
 if __name__ == "__main__": main()

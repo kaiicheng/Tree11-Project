@@ -20,7 +20,12 @@ def write_canonical(rows, name, destination):
     except ImportError: pass
     return rows
 
+def _parse_utc(value):
+    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed.astimezone(timezone.utc)
+
 def _where_since(source, field, cutoff):
+    cutoff = _parse_utc(cutoff.isoformat() if isinstance(cutoff, datetime) else cutoff)
     if source.date_filter_mode != "month_extract":
         return f"{field} >= '{cutoff.isoformat()}'"
     months = []
@@ -38,7 +43,7 @@ def _incremental_where(source, previous, lookback_days):
     values = [r.get(field) for r in previous if r.get(field)]
     if not values: return None
     try:
-        cutoff = datetime.fromisoformat(max(values).replace("Z", "+00:00")) - timedelta(days=lookback_days)
+        cutoff = _parse_utc(max(values)) - timedelta(days=lookback_days)
         return _where_since(source, field, cutoff)
     except ValueError:
         return None
@@ -62,7 +67,7 @@ def fetch_all(settings, return_metadata=False, full=False):
             except (OSError, json.JSONDecodeError):
                 prior_rows = []
             incremental_where = _incremental_where(source, prior_rows, source.lookback_days or settings.lookback_days)
-            full_cutoff = datetime.fromisoformat(settings.analysis_start.replace("Z", "+00:00"))
+            full_cutoff = _parse_utc(settings.analysis_start)
             where = incremental_where or (_where_since(source, source.incremental_field or "createddate", full_cutoff) if full else _rolling_where(source, settings.lookback_days))
             fetched = list(client.rows(dataset_id, order=source.order, page_size=source.page_size,
                                     where=where,

@@ -1,4 +1,5 @@
 node_modules/
+.venv-streaming/
 .next/
 out/
 coverage/
@@ -27,3 +28,10 @@ __pycache__/
 /data/intermediate/
 /data/*.zip
 /pipeline/.test-output/
+.pytest-tmp/
+# Public dashboard history is aggregate-only. Row-level snapshots belong in
+# dedicated research storage, not Git history.
+/public/data/history/snapshots/
+/public/data/history/lifecycle/snapshots/
+streaming/latest.json
+streaming/vehicles.geojson

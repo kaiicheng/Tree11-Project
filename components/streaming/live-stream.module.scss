@@ -1,0 +1,14 @@
+.liveStream { margin: 0 0 var(--magicNumber); padding: .85rem 1.25rem; border: 1px solid #c9bfae; border-radius: var(--borderRadius); background: #eee5d5; color: #17130a; }
+.liveStreamHeader { display: flex; justify-content: space-between; align-items: flex-start; }
+.liveStreamHeader span { color: #72541c; font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; }
+.liveStream h2 { margin: .15rem 0 0; font-size: 1.05rem; }
+.liveStreamHeader b { padding: .2rem .5rem; border: 1px solid #8d8170; border-radius: 999px; color: #72541c; font-size: .65rem; }
+.liveStreamHeader b.online { border-color: #18794e; color: #18794e; }
+.liveStreamHeader b.stale { border-color: #9a6700; color: #9a6700; }
+.liveStreamGrid { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: .7rem; border-top: 1px solid #c9bfae; }
+.liveStreamGrid div { padding: .55rem 1rem .1rem 0; border-right: 1px solid #c9bfae; }
+.liveStreamGrid div:not(:first-child) { padding-left: 1rem; }
+.liveStreamGrid div:last-child { border-right: 0; }
+.liveStream strong { display: block; font-size: 1.1rem; }
+.liveStreamGrid span, .liveStream p { color: #5c5347; font-size: .75rem; }
+@media (max-width: 700px) { .liveStreamGrid { grid-template-columns: 1fr; } .liveStreamGrid div, .liveStreamGrid div:not(:first-child) { padding: .55rem 0; border-right: 0; border-bottom: 1px solid #c9bfae; } .liveStreamGrid div:last-child { border-bottom: 0; } }
