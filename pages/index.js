@@ -3,15 +3,22 @@ import Footer from "../components/footer/footer";
 import PageHeader from "../components/page-header/page-header";
 import StackedBarChart from "../components/charts/StackedBarChart";
 // import LineChart from "../components/charts/LineChart";
-import Map from "../components/map/map";
 import WeatherContext from "../components/weather/WeatherContext";
 import LiveStreamCard from "../components/streaming/LiveStreamCard";
+import dynamic from "next/dynamic";
 import fs from "fs";
 import path from "path";
 import { useEffect, useState } from "react";
 import { refreshAge, formatUtc } from "../lib/data-status";
 
 import styles from "./styles/home.module.scss";
+
+// Mapbox owns and mutates a WebGL canvas. Rendering it only in the browser
+// keeps its DOM outside React's server/client hydration boundary.
+const Map = dynamic(() => import("../components/map/map"), {
+  ssr: false,
+  loading: () => <div className={styles.mapLoadingPlaceholder} role="status">Preparing map…</div>,
+});
 
 function VizTitle({ children, color }) {
   return (
