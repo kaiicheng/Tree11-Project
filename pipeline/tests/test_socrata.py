@@ -28,6 +28,12 @@ def test_text_timestamp_source_uses_socrata_month_extraction_filter():
         assert "date_extract_m(createddate) = 8" in where
 
 
+def test_service_requests_use_non_nullable_created_date_cursor():
+    source = SOURCES["service_requests"]
+    assert source.order_fields == ("createddate", "globalid")
+    assert source.cursor_fields == ("createddate", "globalid")
+
+
 def test_source_config_rejects_unknown_date_filter_mode():
     with pytest.raises(ValueError, match="date filter"):
         SourceConfig("abc", ("updateddate", "globalid"), date_filter_mode="invalid")
