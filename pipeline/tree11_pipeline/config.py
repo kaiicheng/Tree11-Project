@@ -49,9 +49,10 @@ class SourceConfig:
 
 
 SOURCES = {
-    # Socrata exposes updateddate as text for this dataset, so it cannot be
-    # used safely in a SoQL date comparison for incremental filtering.
-    "service_requests": SourceConfig("mu46-p9is", ("updateddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("updateddate", "globalid"), True, incremental_field="createddate", date_filter_mode="month_extract"),
+    # Older service requests may have no updateddate. Using that nullable field
+    # as a keyset cursor silently skips historical pages, so paginate on the
+    # required creation timestamp and stable primary-key tie-breaker instead.
+    "service_requests": SourceConfig("mu46-p9is", ("createddate", "globalid"), PageSizeConfig(10_000, 2_000, 30_000), "keyset", ("createddate", "globalid"), True, incremental_field="createddate", date_filter_mode="month_extract"),
     "inspections": SourceConfig("4pt5-3vv4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True, incremental_field="createddate", date_filter_mode="month_extract"),
     "work_orders": SourceConfig("bdjm-n7q4", ("updateddate", "globalid"), pagination_strategy="keyset", cursor_fields=("updateddate", "globalid"), incremental=True, incremental_field="createddate", date_filter_mode="month_extract"),
     "risk_assessments": SourceConfig("259a-b6s7", ("createddate", "globalid"), incremental=True, incremental_field="createddate", date_filter_mode="month_extract"),
