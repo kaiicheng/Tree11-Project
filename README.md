@@ -52,6 +52,8 @@ Create `.env.local` from `.env.example`. Without a Mapbox token the map shows a 
 | --- | --- | --- |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Browser/public | Mapbox map access token. Restrict it to approved website origins. |
 | `NEXT_PUBLIC_MAPBOX_STYLE` | Browser/public | Optional map style; defaults to Mapbox Streets. |
+| `MTA_API_KEY` | Server only | MTA Bus Time key used by `/api/mta-vehicles` when the local Kafka snapshot is unavailable. |
+| `MTA_FEED_URL` | Server only | Optional GTFS-Realtime vehicle-position endpoint; defaults to the MTA Bus Time feed. |
 | `SOCRATA_APP_TOKEN` | Pipeline only | Optional token for higher NYC Open Data API limits. |
 | `TREE11_ANALYSIS_START` | Pipeline only | Earliest source `createddate`; defaults to `2022-01-01`. |
 
@@ -98,10 +100,12 @@ The repository is believed to be connected to Vercel, with `main` serving the pr
 
 Pushing a branch should create a preview deployment when the Git integration is active. Merging into the configured production branch may deploy automatically. This repository does not contain enough configuration to prove the current Vercel project settings.
 
+For live MTA vehicles in Preview and Production, configure `MTA_API_KEY` in Vercel for both environments. The API uses the local Kafka materialized snapshot during development and falls back to the MTA GTFS-Realtime feed on serverless deployments. The credential remains server-side and must not use the `NEXT_PUBLIC_` prefix.
+
 ## Troubleshooting
 
 - If `next` is not recognized, run `npm ci` first.
 - If linting displays a setup prompt, confirm `.eslintrc.json` exists.
 - A build may warn when Google Fonts cannot be downloaded. The current code loads Six Caps remotely; self-hosting it is planned for a later phase.
 - Map loading depends on a valid Mapbox token, the external Mapbox style, and `public/tree11_collection.geojson`.
-- The production dependency audit currently reports zero known vulnerabilities. The complete development tree still has two high-severity transitive findings in the lint toolchain; keep the lockfile and framework patches current.
+- The dependency audit currently reports zero known vulnerabilities; keep the lockfile and framework patches current.
