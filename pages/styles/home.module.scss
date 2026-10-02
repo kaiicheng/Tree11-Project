@@ -162,6 +162,17 @@
   font-size: 0.875rem;
 }
 
+.initialLoading {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: var(--c-offwhite);
+  color: var(--c-black);
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .dataVizTop {
   background-color: var(--c-black);
   color: #fff8e8;

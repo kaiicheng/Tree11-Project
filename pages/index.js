@@ -63,6 +63,24 @@ function RefreshDashboard({ summary, manifest, trend }) {
   </section>;
 }
 export default function Home({ summary, srBySource, manifest, trend, lifecycle }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className={styles.homeContainer}>
+        <Header pageTitle="Home" />
+        <main className={styles.initialLoading} aria-busy="true">
+          <span>Loading NYC Tree11...</span>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.homeContainer}>
       <Header pageTitle="Home" />
