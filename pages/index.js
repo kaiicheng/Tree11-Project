@@ -1,10 +1,7 @@
 import Header from "../components/header/header";
 import Footer from "../components/footer/footer";
 import PageHeader from "../components/page-header/page-header";
-import StackedBarChart from "../components/charts/StackedBarChart";
 // import LineChart from "../components/charts/LineChart";
-import WeatherContext from "../components/weather/WeatherContext";
-import LiveStreamCard from "../components/streaming/LiveStreamCard";
 import dynamic from "next/dynamic";
 import fs from "fs";
 import path from "path";
@@ -19,6 +16,18 @@ const Map = dynamic(() => import("../components/map/map"), {
   ssr: false,
   loading: () => <div className={styles.mapLoadingPlaceholder} role="status">Preparing map…</div>,
 });
+
+// Canvas charts and live network widgets are mounted only in the browser.
+// Their output changes after page generation, so SSR would otherwise make React
+// compare static build-time markup with a live client render.
+const WeatherContext = dynamic(() => import("../components/weather/WeatherContext"), { ssr: false });
+const LiveStreamCard = dynamic(() => import("../components/streaming/LiveStreamCard"), { ssr: false });
+const StackedBarChart = dynamic(() => import("../components/charts/StackedBarChart"), {
+  ssr: false,
+  loading: () => <div className={styles.chartLoadingPlaceholder} role="status">Preparing chart...</div>,
+});
+
+const formatNumber = (value) => Number(value || 0).toLocaleString("en-US");
 
 function VizTitle({ children, color }) {
   return (
@@ -48,7 +57,7 @@ function RefreshDashboard({ summary, manifest, trend }) {
     <div><span className={styles.refreshLabel}>Data coverage (UTC)</span><strong>{formatUtc(manifest.data_through || summary.data_through)}</strong><small>Latest source event date; a successful refresh does not guarantee current or complete coverage.</small></div>
     <div><span className={styles.refreshLabel}>Reporting period</span><strong>{period.start_month && period.end_month ? `${period.start_month} to ${period.end_month}` : summary.last_complete_month || "Unavailable"}</strong><small>{period.complete_months_only ? "Monthly reporting includes completed months only." : "Reporting-period policy unavailable."}</small></div>
     <div><span className={styles.refreshLabel}>Dataset type</span><strong className={mode !== "live" ? styles.stale : ""}>{mode === "fixture" ? "Test data (fixture)" : mode === "live" ? "Source data" : "Unverified provenance"}</strong><small>{mode === "fixture" ? "Synthetic sample for testing; does not represent NYC totals." : "Coverage and record counts describe this published dataset."}</small></div>
-    <div><span className={styles.refreshLabel}>Source records</span><strong>{Object.values(rows).reduce((a, b) => a + b, 0).toLocaleString()}</strong><small>{Object.entries(rows).map(([name, count]) => `${name.replaceAll("_", " ")}: ${count.toLocaleString()}`).join(" · ")}</small></div>
+    <div><span className={styles.refreshLabel}>Source records</span><strong>{formatNumber(Object.values(rows).reduce((a, b) => a + b, 0))}</strong><small>{Object.entries(rows).map(([name, count]) => `${name.replaceAll("_", " ")}: ${formatNumber(count)}`).join(" · ")}</small></div>
     <div><span className={styles.refreshLabel}>Latest changes</span><strong>+{change.added || 0} / ~{change.changed || 0} / −{change.removed || 0}</strong><small>Added / changed / removed</small></div>
     <div><span className={styles.refreshLabel}>Recent refreshes</span><strong>{trend.labels?.length || 0} retained</strong><small>{trend.labels?.slice(-3).join(" · ") || "No history available"}</small></div>
   </section>;
@@ -69,13 +78,13 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
               <VizTitle color="#fff">
                 % of Service Requests Yielding an Inspection or a Work Order
               </VizTitle>
-              <p className={styles.paragraph_long}>Source-event lifecycle metrics: {lifecycle.request_count.toLocaleString()} requests; {lifecycle.requests_with_inspection.toLocaleString()} linked to an inspection; {lifecycle.requests_with_work_order.toLocaleString()} linked to a work order.</p>
+              <p className={styles.paragraph_long}>Source-event lifecycle metrics: {formatNumber(lifecycle.request_count)} requests; {formatNumber(lifecycle.requests_with_inspection)} linked to an inspection; {formatNumber(lifecycle.requests_with_work_order)} linked to a work order.</p>
               <p className={styles.paragraph_long}>Median request to first inspection: {lifecycle.median_request_to_inspection_hours == null ? "not yet available" : `${lifecycle.median_request_to_inspection_hours.toFixed(1)} hours`}. Timing uses source event fields where available; retained observation history begins when Tree11 snapshots are collected.</p>
             </div>
             <div className={styles.dataVizLine}>
               <div className={styles.lineNumbers}>
                 <div className={styles.numberWrapper}>
-                  <span className={styles.numbersBig}>{summary.last_month_requests.toLocaleString()}</span>
+                  <span className={styles.numbersBig}>{formatNumber(summary.last_month_requests)}</span>
                   <p>
                     <span className={styles.numbersTag}>
                       requests in {summary.last_complete_month || "the last complete month"}
@@ -83,13 +92,13 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
                   </p>
                 </div>
                 <div className={styles.numberWrapper}>
-                  <span className={styles.numbersBig}>{summary.uninspected_requests.toLocaleString()}</span>
+                  <span className={styles.numbersBig}>{formatNumber(summary.uninspected_requests)}</span>
                   <p>
                     <span className={styles.numbersTag}>uninspected</span>
                   </p>
                 </div>
                 <div className={styles.numberWrapper}>
-                  <span className={styles.numbersBig}>{summary.inspections_in_period.toLocaleString()}</span>
+                  <span className={styles.numbersBig}>{formatNumber(summary.inspections_in_period)}</span>
                   <p>
                     <span className={styles.numbersTag}>inspections in the analysis period</span>
                   </p>
@@ -115,7 +124,7 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
                     <VizTitle color="#fff">Monthly Service Requests by Source</VizTitle>
                     <StackedBarChart stacked={true} data={srBySource} />
                     <p className={styles.paragraph_long}>Source data through {summary.data_through ? formatUtc(summary.data_through) : "the latest source record"}. Charts use completed months through {summary.last_complete_month || "the latest completed month"}. Last refresh: {formatUtc(summary.refresh?.ended_at)}.</p>
-                    <p className={styles.paragraph_long}><a href="/data/map/points.geojson" download>Download processed map data (GeoJSON; up to {summary.map_feature_limit?.toLocaleString() || "5,000"} requests from the reporting month)</a></p>
+                    <p className={styles.paragraph_long}><a href="/data/map/points.geojson" download>Download processed map data (GeoJSON; up to {summary.map_feature_limit ? formatNumber(summary.map_feature_limit) : "5,000"} requests from the reporting month)</a></p>
                   </div>
                 </div></section>
                 
