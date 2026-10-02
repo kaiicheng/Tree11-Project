@@ -175,13 +175,38 @@ export default function TreeMap() {
       return undefined;
     }
 
+    if (!mapboxgl.supported()) {
+      const frame = window.requestAnimationFrame(() => {
+        setStatus({
+          state: "error",
+          count: 0,
+          message: "Map unavailable: this browser or device does not support WebGL.",
+        });
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    let mapInstance;
+    try {
+      mapInstance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: MAP_STYLE,
+        center: [INITIAL_VIEW.longitude, INITIAL_VIEW.latitude],
+        zoom: INITIAL_VIEW.zoom,
+      });
+    } catch (error) {
+      console.error("Unable to initialize the Mapbox map", error);
+      const frame = window.requestAnimationFrame(() => {
+        setStatus({
+          state: "error",
+          count: 0,
+          message: "Map unavailable: WebGL could not be initialized. The rest of the dashboard is still available.",
+        });
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
     const controller = new AbortController();
-    const mapInstance = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: MAP_STYLE,
-      center: [INITIAL_VIEW.longitude, INITIAL_VIEW.latitude],
-      zoom: INITIAL_VIEW.zoom,
-    });
     map.current = mapInstance;
     mapInstance.addControl(new mapboxgl.NavigationControl(), "bottom-left");
 
