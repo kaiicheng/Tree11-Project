@@ -53,7 +53,6 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
       <main className={styles.main}>
         <PageHeader showDescription />
         <WeatherContext />
-        <LiveStreamCard />
         <section className={styles.dataGrid}>
           <div className={styles.dataVizMap}>
             <Map />
@@ -116,6 +115,7 @@ export default function Home({ summary, srBySource, manifest, trend, lifecycle }
           </div>
         </section>
         <RefreshDashboard summary={summary} manifest={manifest} trend={trend} />
+        <LiveStreamCard />
       </main>
       <Footer />
     </div>

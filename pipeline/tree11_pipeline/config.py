@@ -80,15 +80,16 @@ class Settings:
     snapshot_retention: int = 26
     # Full builds use the same rolling window as incremental builds unless an
     # explicit start date is supplied. This keeps CI and local runs bounded.
-    analysis_start: str = field(default_factory=lambda: os.getenv("TREE11_ANALYSIS_START", (datetime.now(timezone.utc) - timedelta(days=180)).isoformat()))
+    analysis_start: str = field(default_factory=lambda: os.getenv("TREE11_ANALYSIS_START", (datetime.now(timezone.utc) - timedelta(days=270)).isoformat()))
     count_drop_warning: float = 0.10
     count_drop_failure: float = 0.50
     app_token: str | None = field(default_factory=lambda: os.getenv("SOCRATA_APP_TOKEN"))
     # GitHub Actions runners are ephemeral, so a rolling source window is the
     # reliable baseline when no local canonical cache is available.
-    # Retain enough source history for six completed monthly reporting periods,
-    # with a buffer for calendar boundaries and delayed source updates.
-    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "180")))
+    # Retain nine months of source history so all six completed reporting
+    # months remain populated across calendar boundaries and delayed updates.
+    # Canonical rows stay out of Git; only compact aggregates are published.
+    lookback_days: int = field(default_factory=lambda: int(os.getenv("TREE11_LOOKBACK_DAYS", "270")))
     # Public dashboard builds store aggregates, not row-level historical
     # snapshots. Set this to false only for a dedicated research export.
     compact_public_history: bool = field(default_factory=lambda: os.getenv("TREE11_COMPACT_PUBLIC_HISTORY", "true").lower() not in {"0", "false", "no"})
