@@ -7,7 +7,10 @@ const MAP_STYLE = process.env.NEXT_PUBLIC_MAPBOX_STYLE || "mapbox://styles/mapbo
 const SOURCE_ID = "311-data";
 const MTA_SOURCE_ID = "mta-vehicles";
 const MTA_LAYER_ID = "mta-vehicles-layer";
+const RIOC_SOURCE_ID = "rioc-vehicles";
+const RIOC_LAYER_ID = "rioc-vehicles-layer";
 const MTA_REFRESH_MS = 30_000;
+const RIOC_REFRESH_MS = 15_000;
 const MTA_ANIMATION_MS = 8_000;
 const BOROUGHS = ["Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island"];
 const INITIAL_VIEW = { longitude: -73.98, latitude: 40.698, zoom: 11 };
@@ -44,6 +47,16 @@ async function loadMtaVehicles(signal) {
     geojson: { type: "FeatureCollection", features: Array.isArray(data.features) ? data.features : [] },
     status: data.status || "offline",
     ageSeconds: data.age_seconds ?? null,
+  };
+}
+
+async function loadRiocVehicles(signal) {
+  const response = await fetch("/api/rioc-vehicles", { cache: "no-store", signal });
+  if (!response.ok) throw new Error(`Unable to load RIOC vehicles (${response.status})`);
+  const data = await response.json();
+  return {
+    geojson: { type: "FeatureCollection", features: Array.isArray(data.features) ? data.features : [] },
+    status: data.status || "offline",
   };
 }
 
@@ -114,6 +127,26 @@ function createMtaPopupContent(properties = {}) {
   return container;
 }
 
+function createRiocPopupContent(properties = {}) {
+  const fields = [
+    ["Service", "route_name"], ["Direction", "direction"], ["Vehicle ID", "vehicle_id"],
+    ["Speed (km/h)", "speed_kmh"], ["Position updated", "updated_at"],
+  ];
+  const container = document.createElement("div");
+  const heading = document.createElement("strong");
+  const list = document.createElement("dl");
+  heading.textContent = "RIOC live Red Bus";
+  fields.forEach(([label, key]) => {
+    const term = document.createElement("dt");
+    const value = document.createElement("dd");
+    term.textContent = label;
+    value.textContent = properties[key] ?? "Not available";
+    list.append(term, value);
+  });
+  container.append(heading, list);
+  return container;
+}
+
 export default function TreeMap() {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -127,6 +160,10 @@ export default function TreeMap() {
   const [selectedMtaRoute, setSelectedMtaRoute] = useState("all");
   const selectedMtaRouteRef = useRef(selectedMtaRoute);
   const mtaFeaturesRef = useRef([]);
+  const [showRioc, setShowRioc] = useState(true);
+  const showRiocRef = useRef(showRioc);
+  const [riocStatus, setRiocStatus] = useState({ state: "offline", count: 0, renderedCount: 0 });
+  const riocFeaturesRef = useRef([]);
   const [status, setStatus] = useState(MAPBOX_TOKEN
     ? { state: "loading", count: 0, message: "" }
     : { state: "error", count: 0, message: "Map unavailable: configure NEXT_PUBLIC_MAPBOX_TOKEN." });
@@ -150,7 +187,9 @@ export default function TreeMap() {
 
     let resizeFrame;
     let mtaTimer;
+    let riocTimer;
     let mtaAnimationFrame;
+    let riocAnimationFrame;
     let disposed = false;
     const resizeMap = () => {
       resizeFrame = undefined;
@@ -251,6 +290,34 @@ export default function TreeMap() {
         mapInstance.on("mouseenter", MTA_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = "pointer"; });
         mapInstance.on("mouseleave", MTA_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = ""; });
 
+        mapInstance.addSource(RIOC_SOURCE_ID, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        mapInstance.addLayer({
+          id: RIOC_LAYER_ID,
+          source: RIOC_SOURCE_ID,
+          type: "circle",
+          layout: { visibility: showRiocRef.current ? "visible" : "none" },
+          paint: {
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 5, 14, 10],
+            "circle-color": "#d71920",
+            "circle-opacity": 1,
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 2,
+          },
+        });
+        mapInstance.on("click", RIOC_LAYER_ID, (event) => {
+          const feature = event.features?.[0];
+          if (!feature) return;
+          new mapboxgl.Popup({ className: styles.mapPopup })
+            .setLngLat(feature.geometry.coordinates.slice())
+            .setDOMContent(createRiocPopupContent(feature.properties))
+            .addTo(mapInstance);
+        });
+        mapInstance.on("mouseenter", RIOC_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = "pointer"; });
+        mapInstance.on("mouseleave", RIOC_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = ""; });
+
         const refreshMta = async () => {
           try {
             const result = await loadMtaVehicles(controller.signal);
@@ -309,11 +376,51 @@ export default function TreeMap() {
             }
           }
         };
+        const refreshRioc = async () => {
+          try {
+            const result = await loadRiocVehicles(controller.signal);
+            if (disposed || controller.signal.aborted) return;
+            const source = mapInstance.getSource(RIOC_SOURCE_ID);
+            const nextFeatures = result.geojson.features;
+            const previousFeatures = riocFeaturesRef.current;
+            if (riocAnimationFrame !== undefined) window.cancelAnimationFrame(riocAnimationFrame);
+            const draw = (progress) => source?.setData({
+              type: "FeatureCollection",
+              features: interpolateFeatures(previousFeatures, nextFeatures, progress),
+            });
+            if (previousFeatures.length && nextFeatures.length) {
+              const startedAt = window.performance.now();
+              const animate = (now) => {
+                const progress = Math.min(1, (now - startedAt) / MTA_ANIMATION_MS);
+                draw(progress);
+                if (progress < 1 && !disposed) riocAnimationFrame = window.requestAnimationFrame(animate);
+              };
+              riocAnimationFrame = window.requestAnimationFrame(animate);
+            } else draw(1);
+            riocFeaturesRef.current = nextFeatures;
+            setRiocStatus({ state: result.status, count: nextFeatures.length, renderedCount: 0 });
+            mapInstance.once("idle", () => {
+              if (disposed) return;
+              setRiocStatus({
+                state: result.status,
+                count: nextFeatures.length,
+                renderedCount: mapInstance.queryRenderedFeatures({ layers: [RIOC_LAYER_ID] }).length,
+              });
+            });
+          } catch (error) {
+            if (error.name !== "AbortError") {
+              console.error("Unable to render RIOC Red Bus vehicles", error);
+              setRiocStatus({ state: `error: ${error.message || "unknown error"}`, count: 0, renderedCount: 0 });
+            }
+          }
+        };
         // Mark the map ready before the optional live layer arrives. A slow MTA
         // response should never hide the historical Tree11 map.
         setStatus({ state: "ready", count: geojson.features.length, message: "" });
         refreshMta();
+        refreshRioc();
         mtaTimer = window.setInterval(refreshMta, MTA_REFRESH_MS);
+        riocTimer = window.setInterval(refreshRioc, RIOC_REFRESH_MS);
       } catch (error) {
         if (error.name !== "AbortError") {
           setStatus({ state: "error", count: 0, message: error.message });
@@ -337,7 +444,9 @@ export default function TreeMap() {
       window.removeEventListener("resize", scheduleResize);
       if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);
       if (mtaTimer !== undefined) window.clearInterval(mtaTimer);
+      if (riocTimer !== undefined) window.clearInterval(riocTimer);
       if (mtaAnimationFrame !== undefined) window.cancelAnimationFrame(mtaAnimationFrame);
+      if (riocAnimationFrame !== undefined) window.cancelAnimationFrame(riocAnimationFrame);
       mapInstance.remove();
       map.current = null;
     };
@@ -371,6 +480,15 @@ export default function TreeMap() {
     if (map.current?.getLayer(MTA_LAYER_ID)) map.current.setFilter(MTA_LAYER_ID, mtaRouteFilter(next));
   }
 
+  function toggleRioc() {
+    const next = !showRiocRef.current;
+    showRiocRef.current = next;
+    setShowRioc(next);
+    if (map.current?.getLayer(RIOC_LAYER_ID)) {
+      map.current.setLayoutProperty(RIOC_LAYER_ID, "visibility", next ? "visible" : "none");
+    }
+  }
+
   return (
     <section className={styles.mapWrapper} aria-label="NYC forestry service request map">
       <div className={styles.mapSidebar} aria-live="polite">
@@ -395,6 +513,8 @@ export default function TreeMap() {
         })}
         <input id="filter-mta" type="checkbox" checked={showMta} onChange={toggleMta} />
         <label htmlFor="filter-mta" className={styles.mtaFilter}>MTA buses</label>
+        <input id="filter-rioc" type="checkbox" checked={showRioc} onChange={toggleRioc} />
+        <label htmlFor="filter-rioc" className={styles.riocFilter}>RIOC Red Bus</label>
         <label className={styles.routeLabel} htmlFor="mta-route">Route</label>
         <select id="mta-route" className={styles.routeSelect} value={selectedMtaRoute} onChange={changeMtaRoute} disabled={!showMta || !mtaRoutes.length}>
           <option value="all">All routes</option>
@@ -413,7 +533,7 @@ export default function TreeMap() {
         </div>
       )}
       {status.state === "ready" && (
-        <p className={styles.mapSummary}>{status.count.toLocaleString()} tree records · {showMta ? `${mtaStatus.count.toLocaleString()} MTA vehicles (${mtaStatus.state}${mtaStatus.ageSeconds != null ? `, ${mtaStatus.ageSeconds}s ago` : ""}; ${mtaStatus.renderedCount.toLocaleString()} visible)` : "MTA hidden"}</p>
+        <p className={styles.mapSummary}>{status.count.toLocaleString()} tree records · {showMta ? `${mtaStatus.count.toLocaleString()} MTA (${mtaStatus.renderedCount.toLocaleString()} visible)` : "MTA hidden"} · {showRioc ? `${riocStatus.count.toLocaleString()} Red Bus (${riocStatus.state}; ${riocStatus.renderedCount.toLocaleString()} visible)` : "Red Bus hidden"}</p>
       )}
       <div ref={mapContainer} className={styles.mapContainer} />
     </section>
