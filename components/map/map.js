@@ -8,6 +8,7 @@ const SOURCE_ID = "311-data";
 const MTA_SOURCE_ID = "mta-vehicles";
 const MTA_LAYER_ID = "mta-vehicles-layer";
 const MTA_REFRESH_MS = 30_000;
+const MTA_ANIMATION_MS = 8_000;
 const BOROUGHS = ["Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island"];
 const INITIAL_VIEW = { longitude: -73.98, latitude: 40.698, zoom: 11 };
 
@@ -42,7 +43,34 @@ async function loadMtaVehicles(signal) {
   return {
     geojson: { type: "FeatureCollection", features: Array.isArray(data.features) ? data.features : [] },
     status: data.status || "offline",
+    ageSeconds: data.age_seconds ?? null,
   };
+}
+
+function mtaRouteFilter(routeId) {
+  return routeId === "all" ? null : ["==", ["get", "route_id"], routeId];
+}
+
+function routeOptions(features) {
+  return [...new Set(features.map((feature) => feature?.properties?.route_id).filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
+}
+
+function interpolateFeatures(previous, next, progress) {
+  const priorById = new Map(previous.map((feature) => [String(feature.id), feature]));
+  return next.map((feature) => {
+    const prior = priorById.get(String(feature.id));
+    const from = prior?.geometry?.coordinates;
+    const to = feature?.geometry?.coordinates;
+    if (!Array.isArray(from) || !Array.isArray(to) || from.length !== 2 || to.length !== 2) return feature;
+    return {
+      ...feature,
+      geometry: {
+        ...feature.geometry,
+        coordinates: [from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress],
+      },
+    };
+  });
 }
 
 function createPopupContent(properties = {}) {
@@ -86,7 +114,7 @@ function createMtaPopupContent(properties = {}) {
   return container;
 }
 
-export default function Map() {
+export default function TreeMap() {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [view, setView] = useState(INITIAL_VIEW);
@@ -94,7 +122,11 @@ export default function Map() {
   const boroughsRef = useRef(visibleBoroughs);
   const [showMta, setShowMta] = useState(true);
   const showMtaRef = useRef(showMta);
-  const [mtaStatus, setMtaStatus] = useState({ state: "offline", count: 0 });
+  const [mtaStatus, setMtaStatus] = useState({ state: "offline", count: 0, ageSeconds: null, renderedCount: 0 });
+  const [mtaRoutes, setMtaRoutes] = useState([]);
+  const [selectedMtaRoute, setSelectedMtaRoute] = useState("all");
+  const selectedMtaRouteRef = useRef(selectedMtaRoute);
+  const mtaFeaturesRef = useRef([]);
   const [status, setStatus] = useState(MAPBOX_TOKEN
     ? { state: "loading", count: 0, message: "" }
     : { state: "error", count: 0, message: "Map unavailable: configure NEXT_PUBLIC_MAPBOX_TOKEN." });
@@ -118,6 +150,7 @@ export default function Map() {
 
     let resizeFrame;
     let mtaTimer;
+    let mtaAnimationFrame;
     let disposed = false;
     const resizeMap = () => {
       resizeFrame = undefined;
@@ -196,10 +229,13 @@ export default function Map() {
           source: MTA_SOURCE_ID,
           type: "circle",
           layout: { visibility: showMtaRef.current ? "visible" : "none" },
+          ...(selectedMtaRouteRef.current === "all" ? {} : { filter: mtaRouteFilter(selectedMtaRouteRef.current) }),
           paint: {
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 3, 14, 7],
-            "circle-color": "#137cbd",
-            "circle-opacity": 0.88,
+            // A high-contrast treatment keeps the live signal distinct from
+            // the yellow forestry records, even at the city-wide zoom level.
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 4, 14, 8],
+            "circle-color": "#006dff",
+            "circle-opacity": 1,
             "circle-stroke-color": "#ffffff",
             "circle-stroke-width": 1.5,
           },
@@ -219,10 +255,58 @@ export default function Map() {
           try {
             const result = await loadMtaVehicles(controller.signal);
             if (disposed || controller.signal.aborted) return;
-            mapInstance.getSource(MTA_SOURCE_ID)?.setData(result.geojson);
-            setMtaStatus({ state: result.status, count: result.geojson.features.length });
+            const source = mapInstance.getSource(MTA_SOURCE_ID);
+            const nextFeatures = result.geojson.features;
+            const previousFeatures = mtaFeaturesRef.current;
+            if (mtaAnimationFrame !== undefined) window.cancelAnimationFrame(mtaAnimationFrame);
+            const draw = (progress) => {
+              if (!source || typeof source.setData !== "function") {
+                throw new Error("The MTA map source is unavailable.");
+              }
+              source.setData({
+                type: "FeatureCollection",
+                features: interpolateFeatures(previousFeatures, nextFeatures, progress),
+              });
+            };
+            if (previousFeatures.length && nextFeatures.length) {
+              const startedAt = window.performance.now();
+              const animate = (now) => {
+                const progress = Math.min(1, (now - startedAt) / MTA_ANIMATION_MS);
+                draw(progress);
+                if (progress < 1 && !disposed) mtaAnimationFrame = window.requestAnimationFrame(animate);
+              };
+              mtaAnimationFrame = window.requestAnimationFrame(animate);
+            } else {
+              draw(1);
+            }
+            mtaFeaturesRef.current = nextFeatures;
+            setMtaRoutes(routeOptions(nextFeatures));
+            setMtaStatus({
+              state: result.status,
+              count: nextFeatures.length,
+              ageSeconds: result.ageSeconds,
+              renderedCount: 0,
+            });
+            mapInstance.once("idle", () => {
+              if (disposed) return;
+              const renderedCount = mapInstance.queryRenderedFeatures({ layers: [MTA_LAYER_ID] }).length;
+              setMtaStatus({
+                state: result.status,
+                count: nextFeatures.length,
+                ageSeconds: result.ageSeconds,
+                renderedCount,
+              });
+            });
           } catch (error) {
-            if (error.name !== "AbortError") setMtaStatus({ state: "offline", count: 0 });
+            if (error.name !== "AbortError") {
+              console.error("Unable to render MTA vehicles", error);
+              setMtaStatus({
+                state: `error: ${error.message || "unknown error"}`,
+                count: 0,
+                ageSeconds: null,
+                renderedCount: 0,
+              });
+            }
           }
         };
         // Mark the map ready before the optional live layer arrives. A slow MTA
@@ -253,6 +337,7 @@ export default function Map() {
       window.removeEventListener("resize", scheduleResize);
       if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);
       if (mtaTimer !== undefined) window.clearInterval(mtaTimer);
+      if (mtaAnimationFrame !== undefined) window.cancelAnimationFrame(mtaAnimationFrame);
       mapInstance.remove();
       map.current = null;
     };
@@ -279,6 +364,13 @@ export default function Map() {
     }
   }
 
+  function changeMtaRoute(event) {
+    const next = event.target.value;
+    selectedMtaRouteRef.current = next;
+    setSelectedMtaRoute(next);
+    if (map.current?.getLayer(MTA_LAYER_ID)) map.current.setFilter(MTA_LAYER_ID, mtaRouteFilter(next));
+  }
+
   return (
     <section className={styles.mapWrapper} aria-label="NYC forestry service request map">
       <div className={styles.mapSidebar} aria-live="polite">
@@ -303,6 +395,11 @@ export default function Map() {
         })}
         <input id="filter-mta" type="checkbox" checked={showMta} onChange={toggleMta} />
         <label htmlFor="filter-mta" className={styles.mtaFilter}>MTA buses</label>
+        <label className={styles.routeLabel} htmlFor="mta-route">Route</label>
+        <select id="mta-route" className={styles.routeSelect} value={selectedMtaRoute} onChange={changeMtaRoute} disabled={!showMta || !mtaRoutes.length}>
+          <option value="all">All routes</option>
+          {mtaRoutes.map((route) => <option key={route} value={route}>{route}</option>)}
+        </select>
       </fieldset>
 
       {status.state === "loading" && (
@@ -316,7 +413,7 @@ export default function Map() {
         </div>
       )}
       {status.state === "ready" && (
-        <p className={styles.mapSummary}>{status.count.toLocaleString()} tree records · {showMta ? `${mtaStatus.count.toLocaleString()} MTA vehicles (${mtaStatus.state})` : "MTA hidden"}</p>
+        <p className={styles.mapSummary}>{status.count.toLocaleString()} tree records · {showMta ? `${mtaStatus.count.toLocaleString()} MTA vehicles (${mtaStatus.state}${mtaStatus.ageSeconds != null ? `, ${mtaStatus.ageSeconds}s ago` : ""}; ${mtaStatus.renderedCount.toLocaleString()} visible)` : "MTA hidden"}</p>
       )}
       <div ref={mapContainer} className={styles.mapContainer} />
     </section>
