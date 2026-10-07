@@ -64,6 +64,8 @@
 }
 
 .dataVizGraph {
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid rgba(23, 19, 10, 0.14);
   border-radius: var(--borderRadius);
   padding: 1rem;
@@ -72,7 +74,14 @@
 }
 
 .lineGraph {
+  min-width: 0;
+  max-width: 100%;
   min-height: 480px;
+}
+
+.rightCol > section {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .vizTitle {
@@ -250,11 +259,19 @@
   }
 
   .dataVizMap {
-    height: 70vh;
-    min-height: 460px;
+    height: clamp(420px, 58svh, 540px);
+    min-height: 0;
   }
 
   .lineGraph {
-    overflow-x: auto;
+    min-height: 400px;
+  }
+
+  .rightCol {
+    gap: 3rem;
+  }
+
+  .dataVizGraph {
+    padding: 0.75rem;
   }
 }

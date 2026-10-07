@@ -18,7 +18,8 @@
 
 @media (max-width: 600px) {
   .buttonSmall {
-    padding: 7px 10px;
-    font-size: 0.9rem;
+    min-height: 40px;
+    padding: 9px 11px;
+    font-size: 0.86rem;
   }
 }

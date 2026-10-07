@@ -125,8 +125,13 @@
 }
 
 @media (max-width: 700px) {
+  .pageIntro {
+    margin-bottom: 2.5rem;
+  }
+
   .pageIntro h2 {
-    font-size: clamp(2rem, 10.5vw, 3.5rem);
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.02;
   }
 
   .dataStatus {
@@ -146,7 +151,7 @@
   }
 }
 
-@media (max-width: 430px) {
+@media (max-width: 340px) {
   .dataStatus {
     grid-template-columns: 1fr;
   }

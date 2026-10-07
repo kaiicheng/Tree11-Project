@@ -4,7 +4,7 @@
   max-width: 100%;
   margin-bottom: var(--magicNumber);
   color: #000;
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 .title {
@@ -85,8 +85,8 @@
   }
 
   .title {
-    margin-bottom: 1.25rem;
-    font-size: clamp(52px, 17vw, 82px);
+    margin-bottom: 1.1rem;
+    font-size: clamp(48px, 15vw, 68px);
     gap: 0.08em 0;
   }
 
@@ -95,11 +95,23 @@
   }
 
   .navigation {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .primaryLinks {
+    display: contents;
   }
 
   .description {
     margin-top: 1.75rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .title {
+    font-size: clamp(46px, 14.5vw, 62px);
   }
 }
