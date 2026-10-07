@@ -21,7 +21,50 @@ ChartJS.register(
 );
 const CHART_COLORS = ["#6B4F1D", "#A06F16", "#D29A24", "#2F6B5F", "#587A8A", "#765D8B"];
 
-export default function BarPlot({ data: path, title = "Requests, inspections, and work orders" }) {
+function prepareChartData(jsonData, { datasetLabel, maxPeriods, numericDatasetOrder }) {
+  let datasets = Array.isArray(jsonData.datasets) ? [...jsonData.datasets] : [];
+
+  if (datasetLabel) {
+    datasets = datasets.filter((series) => series.label === datasetLabel);
+  }
+
+  if (numericDatasetOrder) {
+    datasets.sort((a, b) => Number(a.label) - Number(b.label));
+  }
+
+  const labels = Array.isArray(jsonData.labels) ? jsonData.labels : [];
+  let indices = labels.map((_, index) => index);
+
+  if (maxPeriods && indices.length > maxPeriods) {
+    const meaningful = indices.filter((index) => datasets.some((series) => {
+      const value = Number(series.data?.[index]);
+      return Number.isFinite(value) && value !== 0;
+    }));
+    indices = (meaningful.length ? meaningful : indices).slice(-maxPeriods);
+  }
+
+  return {
+    ...jsonData,
+    labels: indices.map((index) => labels[index]),
+    datasets: datasets.map((series, index) => ({
+      ...series,
+      data: indices.map((dataIndex) => series.data?.[dataIndex] ?? 0),
+      backgroundColor: series.backgroundColor || CHART_COLORS[index % CHART_COLORS.length],
+      borderColor: "#17130a",
+      borderWidth: 1,
+      borderRadius: 3,
+      yAxisID: "y",
+    })),
+  };
+}
+
+export default function BarPlot({
+  data: path,
+  title = "Requests, inspections, and work orders",
+  datasetLabel,
+  maxPeriods,
+  numericDatasetOrder = false,
+}) {
     const [data,setData] = useState(null)
     const [error, setError] = useState("")
     const options = {
@@ -46,9 +89,7 @@ export default function BarPlot({ data: path, title = "Requests, inspections, an
         if (!response.ok) throw new Error(`Unable to load chart data (${response.status})`);
         if (!path.endsWith(".json")) throw new Error("Chart asset must be generated JSON");
         const jsonData = await response.json();
-        setData({ ...jsonData, datasets: jsonData.datasets.map((series, i) => ({
-          ...series, backgroundColor: series.backgroundColor || CHART_COLORS[i % CHART_COLORS.length], borderColor: '#17130a', borderWidth: 1, borderRadius: 3, yAxisID: "y",
-        })) });
+        setData(prepareChartData(jsonData, { datasetLabel, maxPeriods, numericDatasetOrder }));
         setError("")
         } catch (fetchError) {
           if (fetchError.name !== "AbortError") setError(fetchError.message);
@@ -57,7 +98,7 @@ export default function BarPlot({ data: path, title = "Requests, inspections, an
 
       getData();
       return () => controller.abort();
-    }, [path])
+    }, [path, datasetLabel, maxPeriods, numericDatasetOrder])
 
     if (error) return <p role="alert">{error}</p>;
     

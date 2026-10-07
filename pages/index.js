@@ -60,6 +60,7 @@ function RefreshDashboard({ summary, manifest, trend }) {
     <div><span className={styles.refreshLabel}>Source records</span><strong>{formatNumber(Object.values(rows).reduce((a, b) => a + b, 0))}</strong><small>{Object.entries(rows).map(([name, count]) => `${name.replaceAll("_", " ")}: ${formatNumber(count)}`).join(" · ")}</small></div>
     <div><span className={styles.refreshLabel}>Latest changes</span><strong>+{change.added || 0} / ~{change.changed || 0} / −{change.removed || 0}</strong><small>Added / changed / removed</small></div>
     <div><span className={styles.refreshLabel}>Recent refreshes</span><strong>{trend.labels?.length || 0} retained</strong><small>{trend.labels?.slice(-3).join(" · ") || "No history available"}</small></div>
+    <div><span className={styles.refreshLabel}>Data quality</span><strong>{summary.validation_status === "valid" ? "Validated" : "Review needed"}</strong><small>{summary.validation_status === "valid" ? "Published files passed the pipeline validation checks." : "Review the validation report before using this snapshot."}</small></div>
   </section>;
 }
 export default function Home({ summary, srBySource, manifest, trend, lifecycle }) {
