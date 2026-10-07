@@ -9,6 +9,7 @@ import {
     Legend,
   } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import styles from "./metric-bar-chart.module.scss";
 
 ChartJS.register(
     CategoryScale,
@@ -25,7 +26,7 @@ export default function BarPlot({ data: path, title = "Requests, inspections, an
     const [error, setError] = useState("")
     const options = {
         responsive: true,
-        aspectRatio: 2.2,
+        maintainAspectRatio: false,
         plugins: {
           legend: { position: 'top', labels: { color: '#17130a', boxWidth: 12, padding: 16 } },
           title: { display: true, text: title, color: '#17130a', font: { size: 14, weight: '600' }, padding: { bottom: 18 } },
@@ -61,6 +62,6 @@ export default function BarPlot({ data: path, title = "Requests, inspections, an
     if (error) return <p role="alert">{error}</p>;
     
     return (
-        data === null ? <p role="status">Loading chart…</p> : <><Bar options={options} data={data} /><details><summary>View chart data</summary><table><thead><tr><th>Period</th>{data.datasets.map(series => <th key={series.label}>{series.label}</th>)}</tr></thead><tbody>{data.labels.map((label, index) => <tr key={label}><th>{label}</th>{data.datasets.map(series => <td key={series.label}>{series.data[index]}</td>)}</tr>)}</tbody></table></details></>
+        data === null ? <p role="status">Loading chart…</p> : <><div className={styles.chart}><Bar options={options} data={data} /></div><details><summary>View chart data</summary><div className={styles.tableScroller}><table><thead><tr><th>Period</th>{data.datasets.map(series => <th key={series.label}>{series.label}</th>)}</tr></thead><tbody>{data.labels.map((label, index) => <tr key={label}><th>{label}</th>{data.datasets.map(series => <td key={series.label}>{series.data[index]}</td>)}</tr>)}</tbody></table></div></details></>
     )
 }
