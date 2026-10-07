@@ -1,93 +1,95 @@
+import Header from "../components/header/header";
+import Footer from "../components/footer/footer";
+import PageHeader from "../components/page-header/page-header";
+import { PageIntro, SectionHeading } from "../components/editorial/editorial";
+import styles from "./styles/intro.module.scss";
 
-import Header from "../components/header/header"
-import Footer from "../components/footer/footer"
-import PageHeader from "../components/page-header/page-header"
-import Link from "next/link"
+const goals = [
+  ["01", "Understand", "Identify participation patterns and bias in crowdsourced forestry reports."],
+  ["02", "Audit", "Measure how service requests move through inspection and work-order decisions."],
+  ["03", "Design", "Turn evidence into more efficient, equitable, and implementable public systems."],
+];
 
-import styles from "./styles/intro.module.scss"
+const datasets = [
+  ["Forestry Service Requests", "https://data.cityofnewyork.us/Environment/Forestry-Service-Requests/mu46-p9is"],
+  ["Forestry Inspections", "https://data.cityofnewyork.us/Environment/Forestry-Inspections/4pt5-3vv4"],
+  ["Forestry Work Orders", "https://data.cityofnewyork.us/Environment/Forestry-Work-Orders/bdjm-n7q4"],
+];
+
+const interpretationNotes = [
+  ["Requests are not trees", "Several reports can refer to the same location or condition, and one report can lead to more than one agency record."],
+  ["Links are evidence-based", "Tree11 only connects records when published identifiers support the relationship. An unmatched record is not proof that no action occurred."],
+  ["Open cases need time", "Cases still in progress are right-censored and excluded from completed-duration calculations until an observable outcome exists."],
+];
+
+const team = [
+  "Prof. Nikhil Garg", "Emma Condie", "Marie Leaf", "Elizabeth Pysher",
+  "Daan van der Zwaag", "Shou-Kai Cheng", "Mingxi Liu", "Christy (Mengqi) Wu",
+];
 
 export default function Intro() {
   return (
     <div className={styles.container}>
-      <Header pageTitle="About"/>
-
+      <Header canonicalPath="/intro" description="Learn how Tree11 links NYC forestry requests, inspections, and work orders—and how to interpret the public data responsibly." pageTitle="About" />
       <main className={styles.main}>
         <PageHeader accent="About" dark />
-        <section className={styles.dataGrid}>
-          <div className={styles.rightCol}>
-            <p className={styles.paragraph_sub}>
-              This dashboard aims to provide New Yorkers insight into current forestry work across the city and within the boroughs, in the hopes of further promoting civic engagement with NYC’s 311 system.
-              A large portion of municipal government services are allocated in reaction to resident crowdsourcing, in which people report problems that they encounter; the New York City 311 system received 2.7 million complaints in 2021. These reports are used to make both immediate decisions—such as which dangerous, downed trees to inspect and fix—and longer-term planning decisions, such as which streets to resurface. While such reporting systems have gained popularity in the last few decades, there is concern that (a) the public doesn’t homogeneously use the system, i.e., some neighborhoods under-report and others exaggerate their incidents; and (b) that municipal agencies are not equitably responsive to complaints from different neighborhoods.
-            </p>
-            <p className={styles.paragraph_sub}>
-            This research develops computational methods to accomplish three goals:
-            </p>
-            <div className={styles.grid}>
-              <div className={styles.card_list}>
-                <h1>1.</h1>
-                <h2 className={styles.header_card}>Understand</h2>
-                    <span className={styles.paragraph_card}>Understand heterogeneous biases and behavior in crowdsourced data</span>
-              </div>
-              <div className={styles.card_list}>
-                <h1>2.</h1>
-                <h2 className={styles.header_card}>Audit</h2>
-                    <span className={styles.paragraph_card}>Audit government responses to resident complaints</span>
-              </div>
-              <div className={styles.card_list}>
-                <h1>3.</h1>
-                <h2 className={styles.header_card}>Design</h2>
-                    <span className={styles.paragraph_card}>Design more efficient, equitable, implementable decision-making systems</span>
-              </div>
-            </div>
-            <p className={styles.paragraph_sub}>
-              We are working with the New York City Department of Parks and Recreation (NYCDPR) to validate and deploy insights from our methods.
-            
-                This research uses publicly available data from NYCDPR, which you can find on the NYC Open Data Portal:
-              </p>
-              <div className={styles.grid}>
-                <Link href="https://data.cityofnewyork.us/Environment/Forestry-Service-Requests/mu46-p9is">
-                  <div className={styles.card_process}>
-                    <h2>Forestry Service Requests Dataset &rarr;</h2>
-                    <p>
-                      View the publicly available Forestry Service Requests dataset on NYC Open Data.
-                    </p>
-                  </div>
-                </Link>
-                <Link href="https://data.cityofnewyork.us/Environment/Forestry-Inspections/4pt5-3vv4">
-                  <div className={styles.card_process}>
-                    <h2>Forestry Inspections Dataset&rarr;</h2>
-                    <p>
-                      View the publicly available Forestry Inspections dataset on NYC Open Data.
-                    </p>
-                  </div>
-                </Link>
-                <Link href="https://data.cityofnewyork.us/Environment/Forestry-Work-Orders/bdjm-n7q4">
-                  <div className={styles.card_process}>
-                    <h2>Forestry Work Orders Dataset &rarr;</h2>
-                    <p>
-                      View the publicly available Forestry Work Orders dataset on NYC Open Data.
-                    </p>
-                  </div>
-                </Link>
-              </div>
+
+        <PageIntro eyebrow="Why Tree11 exists" inverted title="Public reports shape how New York City responds to its urban forest.">
+          <p>
+            Tree11 makes the forestry service-request lifecycle easier to see: what residents report,
+            what NYC Parks inspects, and which cases become work orders. The project also examines
+            whether participation and agency response differ across neighborhoods.
+          </p>
+        </PageIntro>
+
+        <section className={styles.goals} aria-labelledby="research-goals">
+          <SectionHeading eyebrow="Research framework" id="research-goals" inverted title="Three connected goals" />
+          <div className={styles.goalGrid}>
+            {goals.map(([number, title, copy]) => (
+              <article className={styles.goalCard} key={title}>
+                <span>{number}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
           </div>
-          <div>
-            {/* <div className={styles.header_main_Top}> */}
-              <h2 className={styles.header_sub}>Contact Us</h2>
-                <p className={styles.paragraph_credits}>Credits Prof. Nikhil Garg (nkgar6@gmail.com)</p>
-                <p className={styles.paragraph_credits}>Emma Condie (MSC)</p>
-                <p className={styles.paragraph_credits}>Marie Leaf (MSC)</p>
-                <p className={styles.paragraph_credits}>Elizabeth Pysher (MSC)</p>
-                <p className={styles.paragraph_credits}>Daan van der Zwaag (MSC)</p>
-                <p className={styles.paragraph_credits}>Shou-Kai Cheng (MSC)</p>
-                <p className={styles.paragraph_credits}>Mingxi Liu (MSC)</p>
-                <p className={styles.paragraph_credits}>Christy(Mengqi) Wu (MSC)</p>
-            {/* </div> */}
-          </div> 
+        </section>
+
+        <section className={styles.resources} aria-labelledby="open-data">
+          <SectionHeading eyebrow="Primary sources" id="open-data" inverted title="NYC Open Data">
+            <p>Tree11 uses publicly available NYC Parks datasets. Open the source records to inspect methodology and fields directly.</p>
+          </SectionHeading>
+          <div className={styles.resourceGrid}>
+            {datasets.map(([label, href]) => (
+              <a href={href} target="_blank" rel="noopener noreferrer" key={label}>
+                <span>Dataset</span>
+                <strong>{label}</strong>
+                <b aria-hidden="true">↗</b>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.resources} aria-labelledby="reading-data">
+          <SectionHeading eyebrow="Methodology" id="reading-data" inverted title="How to read Tree11">
+            <p>The dashboard is designed for operational context, not individual performance evaluation. These rules keep the comparisons defensible.</p>
+          </SectionHeading>
+          <div className={styles.noteGrid}>
+            {interpretationNotes.map(([title, copy]) => (
+              <article className={styles.noteCard} key={title}>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.team} aria-labelledby="project-team">
+          <SectionHeading eyebrow="Collaboration" id="project-team" inverted title="Project team" />
+          <ul>{team.map((name) => <li key={name}>{name}</li>)}</ul>
         </section>
       </main>
-      {/* Static reusing of component: use just the whole piece of code. Find more in `../components/footer/footer.js`*/}
       <Footer />
     </div>
-  )
+  );
 }
