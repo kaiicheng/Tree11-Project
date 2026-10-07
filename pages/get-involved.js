@@ -3,6 +3,7 @@ import Footer from "../components/footer/footer";
 import PageHeader from "../components/page-header/page-header";
 import { PageIntro, SectionHeading } from "../components/editorial/editorial";
 import styles from "./styles/get-involved.module.scss";
+import compactStyles from "../components/editorial/mobile-compact.module.scss";
 
 const sections = [
   {
@@ -64,13 +65,13 @@ export default function GetInvolved() {
         </aside>
 
         {sections.map((section) => (
-          <section className={styles.resourceSection} key={section.title}>
+          <section className={[styles.resourceSection, compactStyles.resourceSection].join(" ")} key={section.title}>
             <SectionHeading eyebrow={section.label} title={section.title}>
               {section.description && <p>{section.description}</p>}
             </SectionHeading>
-            <div className={[styles.grid, section.featured ? styles.featured : ""].join(" ")}>
+            <div className={[styles.grid, compactStyles.actionGrid, section.featured ? styles.featured : ""].join(" ")}>
               {section.links.map(([title, copy, href]) => (
-                <a href={href} target="_blank" rel="noopener noreferrer" className={styles.card} key={title}>
+                <a href={href} target="_blank" rel="noopener noreferrer" className={[styles.card, compactStyles.actionCard].join(" ")} key={title}>
                   <strong>{title}</strong>
                   <p>{copy}</p>
                   <span aria-hidden="true">Open official resource ↗</span>

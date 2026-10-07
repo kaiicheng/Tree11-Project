@@ -3,6 +3,7 @@ import Footer from "../components/footer/footer";
 import PageHeader from "../components/page-header/page-header";
 import { PageIntro, SectionHeading } from "../components/editorial/editorial";
 import styles from "./styles/intro.module.scss";
+import compactStyles from "../components/editorial/mobile-compact.module.scss";
 
 const goals = [
   ["01", "Understand", "Identify participation patterns and bias in crowdsourced forestry reports."],
@@ -44,9 +45,9 @@ export default function Intro() {
 
         <section className={styles.goals} aria-labelledby="research-goals">
           <SectionHeading eyebrow="Research framework" id="research-goals" inverted title="Three connected goals" />
-          <div className={styles.goalGrid}>
+          <div className={[styles.goalGrid, compactStyles.goalGrid].join(" ")}>
             {goals.map(([number, title, copy]) => (
-              <article className={styles.goalCard} key={title}>
+              <article className={[styles.goalCard, compactStyles.goalCard].join(" ")} key={title}>
                 <span>{number}</span>
                 <h3>{title}</h3>
                 <p>{copy}</p>
@@ -59,9 +60,9 @@ export default function Intro() {
           <SectionHeading eyebrow="Primary sources" id="open-data" inverted title="NYC Open Data">
             <p>Tree11 uses publicly available NYC Parks datasets. Open the source records to inspect methodology and fields directly.</p>
           </SectionHeading>
-          <div className={styles.resourceGrid}>
+          <div className={[styles.resourceGrid, compactStyles.datasetGrid].join(" ")}>
             {datasets.map(([label, href]) => (
-              <a href={href} target="_blank" rel="noopener noreferrer" key={label}>
+              <a className={compactStyles.datasetCard} href={href} target="_blank" rel="noopener noreferrer" key={label}>
                 <span>Dataset</span>
                 <strong>{label}</strong>
                 <b aria-hidden="true">↗</b>
@@ -74,9 +75,9 @@ export default function Intro() {
           <SectionHeading eyebrow="Methodology" id="reading-data" inverted title="How to read Tree11">
             <p>The dashboard is designed for operational context, not individual performance evaluation. These rules keep the comparisons defensible.</p>
           </SectionHeading>
-          <div className={styles.noteGrid}>
+          <div className={[styles.noteGrid, compactStyles.noteGrid].join(" ")}>
             {interpretationNotes.map(([title, copy]) => (
-              <article className={styles.noteCard} key={title}>
+              <article className={[styles.noteCard, compactStyles.noteCard].join(" ")} key={title}>
                 <h3>{title}</h3>
                 <p>{copy}</p>
               </article>
@@ -86,7 +87,7 @@ export default function Intro() {
 
         <section className={styles.team} aria-labelledby="project-team">
           <SectionHeading eyebrow="Collaboration" id="project-team" inverted title="Project team" />
-          <ul>{team.map((name) => <li key={name}>{name}</li>)}</ul>
+          <ul className={compactStyles.teamList}>{team.map((name) => <li className={compactStyles.teamMember} key={name}>{name}</li>)}</ul>
         </section>
       </main>
       <Footer />

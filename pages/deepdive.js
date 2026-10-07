@@ -9,6 +9,7 @@ import Header from "../components/header/header";
 import PageHeader from "../components/page-header/page-header";
 import { formatUtcDate } from "../lib/data-status";
 import styles from "./styles/deepdive.module.scss";
+import compactStyles from "../components/editorial/mobile-compact.module.scss";
 
 const Map = dynamic(() => import("../components/map/map"), {
   ssr: false,
@@ -114,9 +115,9 @@ export default function Deepdive({ pendingWorkOrders, summary, manifest }) {
               <SectionHeading eyebrow="Observed pathway" id="lifecycle-title" title="The service-request lifecycle">
                 <p>A request can receive direct action, remain open, be closed without an inspection, or fail to match another public record. The stages below show only links present in the published data.</p>
               </SectionHeading>
-              <div className={styles.lifecycleGrid}>
+              <div className={[styles.lifecycleGrid, compactStyles.lifecycleGrid].join(" ")}>
                 {lifecycleStages.map((stage) => (
-                  <a className={styles.stageCard} href={stage.href} target="_blank" rel="noopener noreferrer" key={stage.number}>
+                  <a className={[styles.stageCard, compactStyles.stageCard].join(" ")} href={stage.href} target="_blank" rel="noopener noreferrer" key={stage.number}>
                     <span className={styles.stageNumber}>{stage.number}</span>
                     <strong>{formatNumber(stage.count)}</strong>
                     <h3>{stage.title}</h3>
@@ -130,18 +131,18 @@ export default function Deepdive({ pendingWorkOrders, summary, manifest }) {
 
             <section className={styles.detailSection} aria-labelledby="interpret-title">
               <SectionHeading eyebrow="How to interpret it" id="interpret-title" title="Counts at each operational stage" />
-              <div className={styles.detailStack}>
-                <article className={styles.card}>
+              <div className={[styles.detailStack, compactStyles.detailStack].join(" ")}>
+                <article className={[styles.card, compactStyles.detailCard].join(" ")}>
                   <h3>Requests describe demand</h3>
                   <strong className={styles.detailNumber}>{formatNumber(manifest.datasets.service_requests.rows)}</strong>
                   <p>Residents and agencies can submit forestry requests through several systems. Multiple reports may describe the same place or condition, so request totals are not a count of unique trees.</p>
                 </article>
-                <article className={styles.card}>
+                <article className={[styles.card, compactStyles.detailCard].join(" ")}>
                   <h3>Inspections document assessment</h3>
                   <strong className={styles.detailNumber}>{formatNumber(summary.inspections_in_period)}</strong>
                   <p>Forestry specialists evaluate conditions, jurisdiction, location, and urgency. An inspection may produce a work order, a referral, a waitlist decision, or no further recorded action.</p>
                 </article>
-                <article className={styles.card}>
+                <article className={[styles.card, compactStyles.detailCard].join(" ")}>
                   <h3>Work orders describe planned work</h3>
                   <strong className={styles.detailNumber}>{formatNumber(manifest.datasets.work_orders.rows)}</strong>
                   <p>Work orders represent agency tasks, not necessarily completed work. They may be prioritized, reassigned, referred to another agency, or completed after the reporting window.</p>
