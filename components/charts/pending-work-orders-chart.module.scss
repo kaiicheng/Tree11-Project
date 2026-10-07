@@ -1,0 +1,56 @@
+.chart {
+  height: 430px;
+}
+
+.empty {
+  display: grid;
+  min-height: 280px;
+  margin: 0;
+  place-items: center;
+  color: rgba(23, 19, 10, 0.7);
+}
+
+.dataTable {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(23, 19, 10, 0.2);
+  padding-top: 0.8rem;
+  color: #17130a;
+}
+
+.dataTable summary {
+  width: fit-content;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.tableScroller {
+  max-height: 360px;
+  margin-top: 0.8rem;
+  overflow: auto;
+}
+
+.dataTable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.dataTable th,
+.dataTable td {
+  border-bottom: 1px solid rgba(23, 19, 10, 0.14);
+  padding: 0.55rem 0.35rem;
+  text-align: left;
+}
+
+.dataTable td,
+.dataTable thead th:last-child {
+  text-align: right;
+}
+
+@media (max-width: 700px) {
+  .chart {
+    width: 620px;
+    height: 430px;
+  }
+}

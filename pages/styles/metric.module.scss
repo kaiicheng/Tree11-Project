@@ -1,36 +1,145 @@
-.main {
-    width: 100%;
-    height: 100%;
-    color: black;
+.buttonContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
 }
 
-.buttonContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -2rem 0 1.25rem;
+  color: rgba(23, 19, 10, 0.68);
+  font-size: 0.78rem;
+}
+
+.actions span {
+  margin-right: auto;
+}
+
+.actions a {
+  border-bottom: 1px solid currentColor;
+  color: #17130a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.actions a:hover,
+.actions a:focus-visible {
+  color: #765d22;
 }
 
 .button {
-    border: 0;
-    border-radius: 999px;
-    padding: 0.6rem 0.9rem;
-    background: rgba(0, 0, 0, 0.08);
-    color: #000;
-    cursor: pointer;
-    font: inherit;
+  min-height: 44px;
+  border: 1px solid rgba(23, 19, 10, 0.16);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: rgba(23, 19, 10, 0.06);
+  color: #17130a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .button:hover,
 .button:focus-visible {
-    background: rgba(0, 0, 0, 0.18);
+  background: rgba(23, 19, 10, 0.13);
 }
 
 .button:focus-visible {
-    outline: 3px solid #000;
-    outline-offset: 2px;
+  outline: 3px solid #17130a;
+  outline-offset: 2px;
 }
 
 .active {
-    background: var(--c-yellow);
+  border-color: #17130a;
+  background: var(--c-yellow);
+}
+
+.panel {
+  min-height: 420px;
+  border: 1px solid rgba(23, 19, 10, 0.14);
+  border-radius: var(--borderRadius);
+  padding: clamp(1rem, 2.5vw, 2rem);
+  background: rgba(255, 255, 255, 0.32);
+  color: #17130a;
+  overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.panel canvas {
+  max-height: 520px;
+}
+
+.panel details {
+  margin-top: 1.5rem;
+  border-top: 1px solid rgba(23, 19, 10, 0.14);
+  padding-top: 1rem;
+}
+
+.panel summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.panel table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.panel th,
+.panel td {
+  border-bottom: 1px solid rgba(23, 19, 10, 0.12);
+  padding: 0.65rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.panel th:first-child {
+  text-align: left;
+}
+
+.chartStatus {
+  display: grid;
+  min-height: 360px;
+  margin: 0;
+  place-items: center;
+  color: #765d22;
+}
+
+@media (max-width: 700px) {
+  .actions {
+    align-items: flex-start;
+    margin-top: -1rem;
+    flex-direction: column;
+  }
+
+  .actions span {
+    margin-right: 0;
+  }
+
+  .panel {
+    min-height: 340px;
+    padding: 0.75rem;
+  }
+
+  .panel canvas {
+    min-width: 560px;
+  }
+
+  .buttonContainer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .button {
+    width: 100%;
+    text-align: left;
+  }
 }

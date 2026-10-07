@@ -1,370 +1,159 @@
-// add all classes for the Get Involved page in CSS
 .container {
   padding: 0;
 }
+
 .main {
-  min-height: calc(100vh - var(--magicNumber));
-  padding: calc(var(--magicNumber) / 2);
-  margin: calc(var(--magicNumber) / 2);
-  border-radius: var(--borderRadius);
-  min-height: calc(100vh - var(--magicNumber));
-  padding: calc(var(--magicNumber) / 2);
-  margin: calc(var(--magicNumber) / 2);
-  border-radius: var(--borderRadius);
-  flex: 1;
   display: flex;
+  min-height: calc(100vh - var(--magicNumber));
+  margin: calc(var(--magicNumber) / 2);
+  border-radius: var(--borderRadius);
+  padding: calc(var(--magicNumber) / 2);
   flex-direction: column;
-
-  background-color: var(--c-creme);
-}
-
-.description {
-  margin: 4rem 0;
-  line-height: 1.75;
-  font-size: 1.2rem;
-}
-
-.code {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 5px;
-  padding: 0.25rem;
-  font-size: 1.1rem;
-  font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
-    Bitstream Vera Sans Mono, Courier New, monospace;
-}
-
-.rowInfo {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: calc(var(--magicNumber) / 2);
-}
-
-.rowData {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-}
-
-.navigation {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--magicNumber);
-  color: #000000;
-  nav span {
-    margin-right: calc(var(--magicNumber) / 6);
-  }
-}
-
-.columnInfo,
-.columnTitle {
-  width: 50%;
-}
-
-.columnInfo {
-  margin-left: calc(var(--magicNumber) / 2);
-}
-
-// Typography
-
-.title,
-.numbersBig {
-  font-family: "Six Caps", sans-serif;
-  font-size: clamp(48px, calc(48px + 8vw), 130px);
-  text-transform: uppercase;
-  font-weight: 600;
-  line-height: 1;
-  margin: 0;
-  color: #000000;
-}
-
-.numbersTag {
-  text-transform: uppercase;
-  font-size: 14px;
-  margin-left: calc(var(--magicNumber) / 10);
-  color: #000000;
-}
-
-.paragraph {
-  font-style: normal;
-  font-weight: 400;
-  font-size: 12px;
-  line-height: 14px;
-  text-transform: uppercase;
-  color: #000000;
-  max-width: calc(var(--magicNumber) * 10);
-}
-
-.header_paragraph{
-  font-style: normal;
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 14px;
-  text-transform: uppercase;
-  color: #FFFFFF;
-  max-width: calc(var(--magicNumber) * 10);
-}
-
-.header_sub{
-  font-style: normal;
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 14px;
-  text-transform: uppercase;
-  color: #000000;
-  max-width: calc(var(--magicNumber) * 10);
-}
-
-// Dataviz Components
-
-.dataGrid {
-  display: flex;
-  // grid-template-columns: repeat(2, 1fr);
-  // grid-auto-rows: minmax(20vh, auto);
-  gap: calc(var(--magicNumber) / 2);
-  flex-direction: row;
-  align-items: stretch;
-}
-
-.rightCol {
-  width: 50%;
-}
-
-.dataVizMap,
-.dataVizLine,
-.dataVizTop {
-  border-radius: var(--borderRadius);
-  background-color: rgba(0, 0, 0, 0.3);
-  position: relative;
+  background: var(--c-creme);
+  color: #17130a;
+  min-width: 0;
+  max-width: calc(100% - var(--magicNumber));
   overflow: hidden;
-
-  // Style: add on element with overflow: https://gist.github.com/ayamflow/b602ab436ac9f05660d9c15190f4fd7b
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
-.dataVizMap {
-  position: relative;
-  width: 50%;
-  // max-height: 65.75vh;
-
+.resourceSection > header span {
+  color: #765d22;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.dataVizTop {
-  background-color: var(--c-black);
-  padding: calc(var(--magicNumber) * 1.5) calc(var(--magicNumber) / 2);
-  margin-bottom: calc(var(--magicNumber) / 2);
-  min-height: 50%;
-  .vizTitle {
-    position: absolute;
-  }
-  &:hover .vizTitle h3 {
-    opacity: 1;
-  }
+.resourceSection > header p {
+  margin: 0;
+  line-height: 1.55;
 }
 
-.dataVizLine {
-  background-color: var(--c-yellow);
-  display: flex;
-  padding: 0 calc(var(--magicNumber) / 4);
-  position: relative;
-  // max-height:calc(var(--magicNumber) * 4);
-  .lineNumbers {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    border-right: 1px solid rgba(0, 0, 0, 0.2);
-    padding-bottom: calc(var(--magicNumber) / 4);
-    padding-top: calc(var(--magicNumber) / 2);
-
-    .numberWrapper {
-      margin: 0 calc(var(--magicNumber) / 4);
-    }
-  }
-  .lineGraph {
-    // height: 80px;
-    padding: calc(var(--magicNumber) / 2);
-    // hover animation title show interaction
-    &:hover .vizTitle h3 {
-      opacity: 1;
-    }
-  }
+.resourceSection {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.32fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  border-top: 1px solid rgba(23, 19, 10, 0.18);
+  padding: clamp(2rem, 5vw, 4rem) 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
-.vizTitle {
-  // position: absolute;
-  top: calc(var(--magicNumber) / 2);
-  left: calc(var(--magicNumber) / 2);
-  margin-bottom: calc(var(--magicNumber) / 2);
-  z-index: 5;
-  h3 {
-    font-size: 0.8rem;
-    font-weight: 300;
-    margin: 0;
-    text-transform: uppercase;
-    opacity: 0.4;
-    transition: all 300ms ease-in-out;
-  }
+.emergency {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.25fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin: -2rem 0 clamp(3rem, 6vw, 5rem);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  background: #17130a;
+  color: var(--c-creme);
 }
 
-// CODE FROM BEFORE
-.foo {
-  color: yellow;
+.emergency strong {
+  color: var(--c-yellow);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-// All CSS below can be removed, just for keeping the page tidy while nothing is there
+.emergency p {
+  max-width: 800px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.resourceSection > header {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+}
+
+.resourceSection > header h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+  line-height: 1.08;
+}
+
+.resourceSection > header p {
+  color: rgba(23, 19, 10, 0.68);
+}
 
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  width: 100%;
-
-  a,
-  .card {
-    width: 100%;
-  }
 }
 
 .card {
-  height: 100%;
-  margin: 0;
-  padding: 1.5rem;
-  text-align: left;
-  color: #000000;
-  background-color: rgba(0, 0, 0, .06);
-  text-decoration: none;
-  border: 1px solid rgba(0,0,0, 0.3);
-  border-radius: 10px;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  max-width: none;
-  // this is a SASS implementation of CSS; aka nesting of classes
-  &:hover {
-    cursor: pointer;
-  }
+  display: flex;
+  min-height: 220px;
+  border: 1px solid rgba(23, 19, 10, 0.16);
+  border-radius: 14px;
+  padding: 1.4rem;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.26);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
 .card:hover,
-.card:focus,
-.card:active {
-  color: #0070f3;
-  border-color: #0070f3;
+.card:focus-visible {
+  border-color: #17130a;
+  background: #fffaf1;
+  transform: translateY(-2px);
 }
 
-.card h2 {
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
+.card strong {
+  font-size: 1.25rem;
+  line-height: 1.15;
 }
 
 .card p {
-  margin: 0;
-  font-size: 1.25rem;
+  margin: 0.8rem 0 1.5rem;
+  color: rgba(23, 19, 10, 0.72);
   line-height: 1.5;
 }
 
-@media (max-width: 1600px) {
-  .rowInfo {
-    flex-direction: column;
-  }
+.card > span {
+  margin-top: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 
-  .columnInfo,
-  .columnTitle {
-    width: 100%;
-  }
-
-  .columnInfo {
-    margin-left: 0;
-  }
-
-  .navigation {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin: 1.5rem 0 2rem;
-
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    nav span {
-      margin-right: 0;
-    }
-  }
+.featured .card:first-child {
+  border-color: #17130a;
+  background: var(--c-yellow);
 }
 
 @media (max-width: 1100px) {
-  .rowInfo {
-    flex-direction: column;
-  }
-
-  .columnInfo,
-  .columnTitle {
-    width: 100%;
-  }
-
-  .columnInfo {
-    margin-left: 0;
-  }
-
-  .navigation {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin: 1.5rem 0 2rem;
-
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    nav span {
-      margin-right: 0;
-    }
+  .resourceSection {
+    grid-template-columns: 1fr;
   }
 
   .grid {
-    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
-    gap: 1rem;
-  }
-
-  .grid a,
-  .card {
-    width: 100%;
-    max-width: none;
-  }
-
-  .card {
-    height: 100%;
-    margin: 0;
   }
 }
 
-@media (max-width: 600px) {
-  .container {
-    padding: 0;
-  }
-
+@media (max-width: 650px) {
   .main {
     margin: 12px;
     padding: 16px;
-  }
-
-  .title,
-  .numbersBig {
-    font-size: clamp(54px, 20vw, 92px);
+    max-width: calc(100% - 24px);
   }
 
   .grid {
     grid-template-columns: 1fr;
   }
 
+  .emergency {
+    grid-template-columns: 1fr;
+    margin-top: -1rem;
+  }
+
   .card {
-    padding: 1.25rem;
+    min-height: 0;
   }
 }

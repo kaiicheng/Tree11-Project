@@ -1,7 +1,10 @@
 .header {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-bottom: var(--magicNumber);
   color: #000;
+  overflow: hidden;
 }
 
 .title {
@@ -15,6 +18,15 @@
   font-weight: 600;
   line-height: 0.9;
   text-transform: uppercase;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.title > span,
+.title > strong {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .title strong {
@@ -29,6 +41,7 @@
   gap: 1rem;
   width: 100%;
   min-height: 44px;
+  min-width: 0;
 }
 
 .primaryLinks {
@@ -43,6 +56,7 @@
   font-size: 12px;
   line-height: 1.2;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .dark {
@@ -72,7 +86,12 @@
 
   .title {
     margin-bottom: 1.25rem;
-    font-size: clamp(58px, 19vw, 96px);
+    font-size: clamp(52px, 17vw, 82px);
+    gap: 0.08em 0;
+  }
+
+  .title strong {
+    flex-basis: 100%;
   }
 
   .navigation {
