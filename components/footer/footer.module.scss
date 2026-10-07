@@ -21,12 +21,13 @@
 
 @media (max-width: 600px) {
   .footer {
-    padding: 2rem 1.25rem 5rem;
+    padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
   }
 
   .footer p {
     display: block;
-    font-size: 0.9rem;
+    max-width: 34ch;
+    font-size: 0.8rem;
   }
 }
 
