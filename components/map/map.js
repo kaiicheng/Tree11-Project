@@ -234,6 +234,7 @@ export default function TreeMap() {
   const showSubwayRoutesRef = useRef(showSubwayRoutes);
   const [showRioc, setShowRioc] = useState(true);
   const showRiocRef = useRef(showRioc);
+  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
   const [riocStatus, setRiocStatus] = useState({ state: "offline", count: 0, renderedCount: 0 });
   const riocFeaturesRef = useRef([]);
   const [status, setStatus] = useState(MAPBOX_TOKEN
@@ -745,7 +746,20 @@ export default function TreeMap() {
         Longitude: {view.longitude} | Latitude: {view.latitude} | Zoom: {view.zoom}
       </div>
 
-      <fieldset className={styles.filterGroup}>
+      <button
+        type="button"
+        className={styles.layerPanelToggle}
+        aria-expanded={isLayerPanelOpen}
+        aria-controls="map-layer-controls"
+        onClick={() => setIsLayerPanelOpen((open) => !open)}
+      >
+        {isLayerPanelOpen ? "Close" : "Layers"}
+      </button>
+
+      <fieldset
+        id="map-layer-controls"
+        className={`${styles.filterGroup} ${isLayerPanelOpen ? styles.filterGroupOpen : ""}`}
+      >
         <legend>Map layers</legend>
         {BOROUGHS.map((borough) => {
           const id = `filter-${borough.toLowerCase().replaceAll(" ", "-")}`;
