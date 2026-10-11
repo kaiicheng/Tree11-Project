@@ -7,9 +7,13 @@ const MAP_STYLE = process.env.NEXT_PUBLIC_MAPBOX_STYLE || "mapbox://styles/mapbo
 const SOURCE_ID = "311-data";
 const MTA_SOURCE_ID = "mta-vehicles";
 const MTA_LAYER_ID = "mta-vehicles-layer";
+const SUBWAY_SOURCE_ID = "subway-vehicles";
+const SUBWAY_LAYER_ID = "subway-vehicles-layer";
+const SUBWAY_LABEL_LAYER_ID = "subway-vehicles-labels";
 const RIOC_SOURCE_ID = "rioc-vehicles";
 const RIOC_LAYER_ID = "rioc-vehicles-layer";
 const MTA_REFRESH_MS = 30_000;
+const SUBWAY_REFRESH_MS = 30_000;
 const RIOC_REFRESH_MS = 15_000;
 const MTA_ANIMATION_MS = 8_000;
 const BOROUGHS = ["Bronx", "Brooklyn", "Manhattan", "Queens", "Staten Island"];
@@ -60,7 +64,22 @@ async function loadRiocVehicles(signal) {
   };
 }
 
+async function loadSubwayVehicles(signal) {
+  const response = await fetch("/api/subway-vehicles", { cache: "no-store", signal });
+  if (!response.ok) throw new Error(`Unable to load MTA Subway trains (${response.status})`);
+  const data = await response.json();
+  return {
+    geojson: { type: "FeatureCollection", features: Array.isArray(data.features) ? data.features : [] },
+    status: data.status || "offline",
+    ageSeconds: data.age_seconds ?? null,
+  };
+}
+
 function mtaRouteFilter(routeId) {
+  return routeId === "all" ? null : ["==", ["get", "route_id"], routeId];
+}
+
+function subwayRouteFilter(routeId) {
   return routeId === "all" ? null : ["==", ["get", "route_id"], routeId];
 }
 
@@ -147,6 +166,29 @@ function createRiocPopupContent(properties = {}) {
   return container;
 }
 
+function createSubwayPopupContent(properties = {}) {
+  const fields = [
+    ["Line", "route_id"], ["Direction", "direction"], ["Next station", "next_stop"],
+    ["Destination", "destination"], ["Estimated progress", "progress"],
+    ["Next arrival", "next_arrival"], ["Updated", "updated_at"],
+  ];
+  const container = document.createElement("div");
+  const heading = document.createElement("strong");
+  const note = document.createElement("p");
+  const list = document.createElement("dl");
+  heading.textContent = "MTA Subway — estimated live position";
+  note.textContent = "Position is inferred between stations from official MTA real-time arrival data; it is not underground GPS.";
+  fields.forEach(([label, key]) => {
+    const term = document.createElement("dt");
+    const value = document.createElement("dd");
+    term.textContent = label;
+    value.textContent = key === "progress" && properties[key] != null ? `${properties[key]}%` : properties[key] ?? "Not available";
+    list.append(term, value);
+  });
+  container.append(heading, note, list);
+  return container;
+}
+
 export default function TreeMap() {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -160,6 +202,13 @@ export default function TreeMap() {
   const [selectedMtaRoute, setSelectedMtaRoute] = useState("all");
   const selectedMtaRouteRef = useRef(selectedMtaRoute);
   const mtaFeaturesRef = useRef([]);
+  const [showSubway, setShowSubway] = useState(true);
+  const showSubwayRef = useRef(showSubway);
+  const [subwayStatus, setSubwayStatus] = useState({ state: "offline", count: 0, ageSeconds: null, renderedCount: 0 });
+  const [subwayRoutes, setSubwayRoutes] = useState([]);
+  const [selectedSubwayRoute, setSelectedSubwayRoute] = useState("all");
+  const selectedSubwayRouteRef = useRef(selectedSubwayRoute);
+  const subwayFeaturesRef = useRef([]);
   const [showRioc, setShowRioc] = useState(true);
   const showRiocRef = useRef(showRioc);
   const [riocStatus, setRiocStatus] = useState({ state: "offline", count: 0, renderedCount: 0 });
@@ -212,8 +261,10 @@ export default function TreeMap() {
 
     let resizeFrame;
     let mtaTimer;
+    let subwayTimer;
     let riocTimer;
     let mtaAnimationFrame;
+    let subwayAnimationFrame;
     let riocAnimationFrame;
     let disposed = false;
     const resizeMap = () => {
@@ -314,6 +365,61 @@ export default function TreeMap() {
         });
         mapInstance.on("mouseenter", MTA_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = "pointer"; });
         mapInstance.on("mouseleave", MTA_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = ""; });
+
+        mapInstance.addSource(SUBWAY_SOURCE_ID, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        mapInstance.addLayer({
+          id: SUBWAY_LAYER_ID,
+          source: SUBWAY_SOURCE_ID,
+          type: "circle",
+          layout: { visibility: showSubwayRef.current ? "visible" : "none" },
+          ...(selectedSubwayRouteRef.current === "all" ? {} : { filter: subwayRouteFilter(selectedSubwayRouteRef.current) }),
+          paint: {
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 7, 14, 12],
+            "circle-color": ["match", ["get", "route_id"],
+              "1", "#EE352E", "2", "#EE352E", "3", "#EE352E",
+              "4", "#00933C", "5", "#00933C", "6", "#00933C",
+              "7", "#B933AD", "A", "#0039A6", "C", "#0039A6", "E", "#0039A6",
+              "B", "#FF6319", "D", "#FF6319", "F", "#FF6319", "M", "#FF6319",
+              "G", "#6CBE45", "J", "#996633", "Z", "#996633", "L", "#A7A9AC",
+              "N", "#FCCC0A", "Q", "#FCCC0A", "R", "#FCCC0A", "W", "#FCCC0A",
+              "#808183"],
+            "circle-opacity": 0.95,
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 2,
+          },
+        });
+        mapInstance.addLayer({
+          id: SUBWAY_LABEL_LAYER_ID,
+          source: SUBWAY_SOURCE_ID,
+          type: "symbol",
+          layout: {
+            visibility: showSubwayRef.current ? "visible" : "none",
+            "text-field": ["get", "route_id"],
+            "text-size": ["interpolate", ["linear"], ["zoom"], 9, 8, 14, 12],
+            "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": true,
+            "text-ignore-placement": true,
+          },
+          ...(selectedSubwayRouteRef.current === "all" ? {} : { filter: subwayRouteFilter(selectedSubwayRouteRef.current) }),
+          paint: {
+            "text-color": ["match", ["get", "route_id"],
+              "N", "#111111", "Q", "#111111", "R", "#111111", "W", "#111111",
+              "#ffffff"],
+          },
+        });
+        mapInstance.on("click", SUBWAY_LAYER_ID, (event) => {
+          const feature = event.features?.[0];
+          if (!feature) return;
+          new mapboxgl.Popup({ className: styles.mapPopup })
+            .setLngLat(feature.geometry.coordinates.slice())
+            .setDOMContent(createSubwayPopupContent(feature.properties))
+            .addTo(mapInstance);
+        });
+        mapInstance.on("mouseenter", SUBWAY_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = "pointer"; });
+        mapInstance.on("mouseleave", SUBWAY_LAYER_ID, () => { mapInstance.getCanvas().style.cursor = ""; });
 
         mapInstance.addSource(RIOC_SOURCE_ID, {
           type: "geojson",
@@ -439,12 +545,54 @@ export default function TreeMap() {
             }
           }
         };
+        const refreshSubway = async () => {
+          try {
+            const result = await loadSubwayVehicles(controller.signal);
+            if (disposed || controller.signal.aborted) return;
+            const source = mapInstance.getSource(SUBWAY_SOURCE_ID);
+            const nextFeatures = result.geojson.features;
+            const previousFeatures = subwayFeaturesRef.current;
+            if (subwayAnimationFrame !== undefined) window.cancelAnimationFrame(subwayAnimationFrame);
+            const draw = (progress) => source?.setData({
+              type: "FeatureCollection",
+              features: interpolateFeatures(previousFeatures, nextFeatures, progress),
+            });
+            if (previousFeatures.length && nextFeatures.length) {
+              const startedAt = window.performance.now();
+              const animate = (now) => {
+                const progress = Math.min(1, (now - startedAt) / MTA_ANIMATION_MS);
+                draw(progress);
+                if (progress < 1 && !disposed) subwayAnimationFrame = window.requestAnimationFrame(animate);
+              };
+              subwayAnimationFrame = window.requestAnimationFrame(animate);
+            } else draw(1);
+            subwayFeaturesRef.current = nextFeatures;
+            setSubwayRoutes(routeOptions(nextFeatures));
+            setSubwayStatus({ state: result.status, count: nextFeatures.length, ageSeconds: result.ageSeconds, renderedCount: 0 });
+            mapInstance.once("idle", () => {
+              if (disposed) return;
+              setSubwayStatus({
+                state: result.status,
+                count: nextFeatures.length,
+                ageSeconds: result.ageSeconds,
+                renderedCount: mapInstance.queryRenderedFeatures({ layers: [SUBWAY_LAYER_ID] }).length,
+              });
+            });
+          } catch (error) {
+            if (error.name !== "AbortError") {
+              console.error("Unable to render MTA Subway trains", error);
+              setSubwayStatus({ state: `error: ${error.message || "unknown error"}`, count: 0, ageSeconds: null, renderedCount: 0 });
+            }
+          }
+        };
         // Mark the map ready before the optional live layer arrives. A slow MTA
         // response should never hide the historical Tree11 map.
         setStatus({ state: "ready", count: geojson.features.length, message: "" });
         refreshMta();
+        refreshSubway();
         refreshRioc();
         mtaTimer = window.setInterval(refreshMta, MTA_REFRESH_MS);
+        subwayTimer = window.setInterval(refreshSubway, SUBWAY_REFRESH_MS);
         riocTimer = window.setInterval(refreshRioc, RIOC_REFRESH_MS);
       } catch (error) {
         if (error.name !== "AbortError") {
@@ -469,8 +617,10 @@ export default function TreeMap() {
       window.removeEventListener("resize", scheduleResize);
       if (resizeFrame !== undefined) window.cancelAnimationFrame(resizeFrame);
       if (mtaTimer !== undefined) window.clearInterval(mtaTimer);
+      if (subwayTimer !== undefined) window.clearInterval(subwayTimer);
       if (riocTimer !== undefined) window.clearInterval(riocTimer);
       if (mtaAnimationFrame !== undefined) window.cancelAnimationFrame(mtaAnimationFrame);
+      if (subwayAnimationFrame !== undefined) window.cancelAnimationFrame(subwayAnimationFrame);
       if (riocAnimationFrame !== undefined) window.cancelAnimationFrame(riocAnimationFrame);
       mapInstance.remove();
       map.current = null;
@@ -514,8 +664,26 @@ export default function TreeMap() {
     }
   }
 
+  function toggleSubway() {
+    const next = !showSubwayRef.current;
+    showSubwayRef.current = next;
+    setShowSubway(next);
+    [SUBWAY_LAYER_ID, SUBWAY_LABEL_LAYER_ID].forEach((layerId) => {
+      if (map.current?.getLayer(layerId)) map.current.setLayoutProperty(layerId, "visibility", next ? "visible" : "none");
+    });
+  }
+
+  function changeSubwayRoute(event) {
+    const next = event.target.value;
+    selectedSubwayRouteRef.current = next;
+    setSelectedSubwayRoute(next);
+    [SUBWAY_LAYER_ID, SUBWAY_LABEL_LAYER_ID].forEach((layerId) => {
+      if (map.current?.getLayer(layerId)) map.current.setFilter(layerId, subwayRouteFilter(next));
+    });
+  }
+
   return (
-    <section className={styles.mapWrapper} aria-label="NYC forestry service request map">
+    <section className={styles.mapWrapper} aria-label="NYC forestry and live transit map">
       <div className={styles.mapSidebar} aria-live="polite">
         Longitude: {view.longitude} | Latitude: {view.latitude} | Zoom: {view.zoom}
       </div>
@@ -540,10 +708,17 @@ export default function TreeMap() {
         <label htmlFor="filter-mta" className={styles.mtaFilter}>MTA buses</label>
         <input id="filter-rioc" type="checkbox" checked={showRioc} onChange={toggleRioc} />
         <label htmlFor="filter-rioc" className={styles.riocFilter}>RIOC Red Bus</label>
-        <label className={styles.routeLabel} htmlFor="mta-route">Route</label>
+        <label className={styles.routeLabel} htmlFor="mta-route">Bus route</label>
         <select id="mta-route" className={styles.routeSelect} value={selectedMtaRoute} onChange={changeMtaRoute} disabled={!showMta || !mtaRoutes.length}>
           <option value="all">All routes</option>
           {mtaRoutes.map((route) => <option key={route} value={route}>{route}</option>)}
+        </select>
+        <input id="filter-subway" type="checkbox" checked={showSubway} onChange={toggleSubway} />
+        <label htmlFor="filter-subway" className={styles.subwayFilter}>MTA Subway (estimated)</label>
+        <label className={styles.routeLabel} htmlFor="subway-route">Subway line</label>
+        <select id="subway-route" className={styles.routeSelect} value={selectedSubwayRoute} onChange={changeSubwayRoute} disabled={!showSubway || !subwayRoutes.length}>
+          <option value="all">All lines</option>
+          {subwayRoutes.map((route) => <option key={route} value={route}>{route}</option>)}
         </select>
       </fieldset>
 
@@ -558,7 +733,7 @@ export default function TreeMap() {
         </div>
       )}
       {status.state === "ready" && (
-        <p className={styles.mapSummary}>{status.count.toLocaleString()} tree records · {showMta ? `${mtaStatus.count.toLocaleString()} MTA (${mtaStatus.renderedCount.toLocaleString()} visible)` : "MTA hidden"} · {showRioc ? `${riocStatus.count.toLocaleString()} Red Bus (${riocStatus.state}; ${riocStatus.renderedCount.toLocaleString()} visible)` : "Red Bus hidden"}</p>
+        <p className={styles.mapSummary}>{status.count.toLocaleString()} tree records · {showMta ? `${mtaStatus.count.toLocaleString()} buses (${mtaStatus.renderedCount.toLocaleString()} visible)` : "buses hidden"} · {showSubway ? `${subwayStatus.count.toLocaleString()} subway trains estimated (${subwayStatus.renderedCount.toLocaleString()} visible)` : "subway hidden"} · {showRioc ? `${riocStatus.count.toLocaleString()} Red Bus (${riocStatus.renderedCount.toLocaleString()} visible)` : "Red Bus hidden"}</p>
       )}
       <div ref={mapContainer} className={styles.mapContainer} />
     </section>

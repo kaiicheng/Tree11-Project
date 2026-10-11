@@ -155,6 +155,11 @@
   color: #ffd9d9;
 }
 
+.filterGroup .subwayFilter {
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+  color: #fff2a8;
+}
+
 .routeLabel {
   display: block;
   padding: 8px 10px 2px;
@@ -231,6 +236,13 @@
       font-weight: 600;
       line-height: 1.35;
     }
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: #6d5c32;
+    font-size: 11px;
+    line-height: 1.35;
   }
 }
 

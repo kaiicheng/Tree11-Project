@@ -54,6 +54,7 @@ Create `.env.local` from `.env.example`. Without a Mapbox token the map shows a 
 | `NEXT_PUBLIC_MAPBOX_STYLE` | Browser/public | Optional map style; defaults to Mapbox Streets. |
 | `MTA_API_KEY` | Server only | MTA Bus Time key used by `/api/mta-vehicles` when the local Kafka snapshot is unavailable. |
 | `MTA_FEED_URL` | Server only | Optional GTFS-Realtime vehicle-position endpoint; defaults to the MTA Bus Time feed. |
+| `MTA_SUBWAY_FEED_URL` | Server only | Optional comma-separated Subway GTFS-Realtime feed override. Leave unset to use all official MTA subway feed groups; no API key is required. |
 | `SOCRATA_APP_TOKEN` | Pipeline only | Optional token for higher NYC Open Data API limits. |
 | `TREE11_ANALYSIS_START` | Pipeline only | Earliest source `createddate`; defaults to `2022-01-01`. |
 
@@ -101,6 +102,8 @@ The repository is believed to be connected to Vercel, with `main` serving the pr
 Pushing a branch should create a preview deployment when the Git integration is active. Merging into the configured production branch may deploy automatically. This repository does not contain enough configuration to prove the current Vercel project settings.
 
 For live MTA vehicles in Preview and Production, configure `MTA_API_KEY` in Vercel for both environments. The API uses the local Kafka materialized snapshot during development and falls back to the MTA GTFS-Realtime feed on serverless deployments. The credential remains server-side and must not use the `NEXT_PUBLIC_` prefix.
+
+Subway data is fetched directly by `/api/subway-vehicles` from the public MTA GTFS-Realtime feeds and needs no Vercel secret. MTA refreshes those feeds about every 30 seconds. Because the feeds report train progress and station times rather than underground GPS coordinates, the map estimates each train's position between its previous and next stations. The frontend refreshes every 30 seconds and interpolates between consecutive estimates for smoother movement.
 
 ## Troubleshooting
 
